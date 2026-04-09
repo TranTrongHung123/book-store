@@ -1,0 +1,48 @@
+package com.ptit.backend.dto.request;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.List;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class UserVoucherRequest {
+
+    @JsonProperty("id")
+    private String id;
+
+    @JsonProperty("username")
+    private String username;
+
+    @JsonProperty("promotionId")
+    private String promotionId;
+
+    @JsonProperty("code")
+    private String code;
+
+    @JsonProperty("title")
+    private String title;
+
+    @JsonProperty("subtitle")
+    private String subtitle;
+
+    @JsonProperty("discount_percent")
+    private BigDecimal discountPercent;
+
+    @JsonProperty("voucher_type")
+    private String voucherType;
+
+    @JsonProperty("applies_to_categories")
+    private List<String> appliesToCategories;
+
+    @JsonProperty("claimed_at")
+    private LocalDateTime claimedAt;
+}
+
