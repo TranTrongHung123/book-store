@@ -2,14 +2,38 @@
 
 ---
 
-## QUY ƯỚC CHUNG 
+## QUY ƯỚC CHUNG
 *   **Content-Type:** `application/json`
-*   **Base URL:** `/api/v1` 
+*   **Base URL:** `/api/v1`
 *   **Tính năng mặc định cần hỗ trợ cho các API GET (List):**
     *   `_page`, `_limit` (Phân trang)
     *   `_sort`, `_order` (Sắp xếp)
     *   `q` (Tìm kiếm Full-text)
     *   Lọc theo các trường (Ví dụ: `?category_name=Tiểu thuyết` hoặc `?user_id=1`)
+
+---
+
+## 0. XÁC THỰC (AUTH)
+**Endpoint goc:** `/auth`
+
+### 0.1. Đăng kí tài khoản mới
+*   **Method:** `POST`
+*   **URL:** `/auth/register`
+*   **Input (Request Body):**
+    ```json
+    {
+      "username": "newuser",
+      "password": "12345678",
+      "full_name": "Ten Khach Hang",
+      "email": "email@example.com"
+    }
+    ```
+*   **Output (201 Created):** `ApiResponse<UserResponse>`.
+
+### 0.2. Đăng nhập
+*   **Method:** `POST`
+*   **URL:** `/auth/login`
+*   **Output (200 OK):** `ApiResponse<LoginResponse>`.
 
 ---
 
@@ -40,7 +64,7 @@
 *   **URL:** `/users/{id}`
 *   **Output (200 OK):** Trả về 1 object user như cấu trúc trên.
 
-### 1.3. Tạo người dùng mới (Đăng ký/Thêm mới)
+### 1.3. Tạo người dùng mới (Quản trị)
 *   **Method:** `POST`
 *   **URL:** `/users`
 *   **Input (Request Body):**
@@ -56,7 +80,8 @@
       "status": 1
     }
     ```
-*   **Output (201 Created):** Object user vừa tạo (kèm `id`).
+*   **Output (201 Created):** Object user vua tao (kem `id`).
+*   **Ghi chú:** Dang ky public cho frontend su dung `/auth/register`.
 
 ### 1.4. Cập nhật một phần thông tin người dùng
 *   **Method:** `PATCH`
@@ -355,9 +380,46 @@
 
 ---
 
-## 10. NESTED ROUTES 
+## 10. NESTED ROUTES
 
 *   **Lấy lịch sử mua hàng của user:** `GET /users/{userId}/orders`
 *   **Lấy lịch sử thuê sách của user:** `GET /users/{userId}/rentals`
 *   **Lấy danh sách các cuốn vật lý của 1 đầu sách:** `GET /books/{bookId}/book_items`
 *   **Lấy tất cả bình luận của 1 cuốn sách:** `GET /books/{bookId}/reviews`
+
+---
+
+
+## 11. QUẢN LÝ UPLOAD FILE (UPLOAD)
+**Endpoint gốc:** `/upload`
+
+### 11.1. Tải lên một hình ảnh
+* **Method:** `POST`
+* **URL:** `/upload/image`
+* **Headers:**
+    * `Content-Type: multipart/form-data`
+* **Input (Form Data):**
+    * `file`: File ảnh cần tải lên.
+* **Output (200 OK):**
+```json
+{
+  "url": "[https://res.cloudinary.com/.../bookstore_abc123.jpg](https://res.cloudinary.com/.../bookstore_abc123.jpg)",
+  "public_id": "book_covers/bookstore_abc123"
+}
+```
+
+### 11.2. Xóa hình ảnh đã tải lên
+* **Method:** `DELETE`
+* **URL:** `/upload/image`
+* **Input:**
+```json
+{
+  "public_id": "book_covers/bookstore_abc123"
+}
+```
+* **Output (200 OK):**
+```json
+{
+  "message": "Xóa hình ảnh thành công."
+}
+```

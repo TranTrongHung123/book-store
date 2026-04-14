@@ -7,11 +7,11 @@
 
 ## Phạm vi URL đã có trong collection
 - Auth:
+  - `POST /api/v1/auth/register`
   - `POST /api/v1/auth/login`
 - Users:
   - `GET /api/v1/users`
   - `GET /api/v1/users/{id}`
-  - `POST /api/v1/users`
   - `PATCH /api/v1/users/{id}`
   - `DELETE /api/v1/users/{id}`
 - Categories:
@@ -47,13 +47,16 @@
    2. `01 - Security Guard`
    3. `02 - Categories Workflow (Admin)`
    4. `03 - Books Workflow`
-   5. `04 - Users Workflow (Đăng ký + Quản lý)`
+      5. `04 - Users Workflow (Quản lý)`
    6. `05 - Orders Workflow`
    7. `06 - Rentals Workflow`
    8. `99 - Cleanup Workflow`
 
 ## Đăng nhập
 - Đăng nhập sử dụng endpoint: `POST /api/v1/auth/login`.
+
+## Đăng ký
+- Đăng ký sử dụng endpoint: `POST /api/v1/auth/register`.
 
 ## Dữ liệu mặc định để test nhanh
 - `admin / Admin@123`
