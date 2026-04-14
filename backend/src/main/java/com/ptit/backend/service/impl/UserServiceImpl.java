@@ -48,12 +48,8 @@ public class UserServiceImpl implements UserService {
         if (!StringUtils.hasText(request.getPassword())) {
             throw new AppException(ErrorCode.INVALID_REQUEST, "Mat khau la bat buoc");
         }
-        if (request.getRoleId() == null) {
-            throw new AppException(ErrorCode.INVALID_REQUEST, "Truong role_id la bat buoc");
-        }
         validateUserRequest(request, null);
-        Role role = roleRepository.findById(request.getRoleId())
-                .orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND));
+        Role role = resolveRoleForCreate(request.getRoleId());
 
         User user = userMapper.toEntity(request);
         user.setRole(role);
@@ -64,6 +60,17 @@ public class UserServiceImpl implements UserService {
 
         User savedUser = userRepository.save(user);
         return userMapper.toResponse(savedUser);
+    }
+
+    private Role resolveRoleForCreate(Long roleId) {
+        if (roleId != null) {
+            return roleRepository.findById(roleId)
+                    .orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND));
+        }
+
+        return roleRepository.findByRoleName("USER")
+                .or(() -> roleRepository.findByRoleName("ROLE_USER"))
+                .orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND, "Khong tim thay vai tro USER"));
     }
 
     @Override
