@@ -4,7 +4,7 @@ SET FOREIGN_KEY_CHECKS = 0;
 -- =========================================================
 -- 1. ROLE
 -- =========================================================
-INSERT INTO `role` (`role_id`, `role_name`, `description`)
+INSERT INTO `role` (`role_name`, `description`)
 VALUES ('ROLE_ADMIN', 'Quản trị viên toàn hệ thống, quản lý nhân sự và cấu hình'),
        ('ROLE_STAFF', 'Nhân viên cửa hàng, xử lý đơn hàng, nhập kho và quản lý thuê sách'),
        ('ROLE_USER', 'Khách hàng mua sắm và sử dụng dịch vụ trực tuyến');
