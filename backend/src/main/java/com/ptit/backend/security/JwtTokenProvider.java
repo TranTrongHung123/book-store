@@ -1,5 +1,7 @@
 package com.ptit.backend.security;
 
+import com.ptit.backend.entity.Role;
+import com.ptit.backend.entity.User;
 import com.ptit.backend.exception.AppException;
 import com.ptit.backend.exception.ErrorCode;
 import io.jsonwebtoken.Claims;
@@ -43,6 +45,25 @@ public class JwtTokenProvider {
         return generateToken(userDetails.getUsername(), roles);
     }
 
+    public String generateToken(User user) {
+        String roleName = normalizeRoleName(user.getRole());
+        Instant now = Instant.now();
+
+        return Jwts.builder()
+                .subject(user.getUsername())
+                .issuer(issuer)
+                .issuedAt(Date.from(now))
+                .expiration(Date.from(now.plusMillis(expirationMs)))
+                .claim("user_id", user.getUserId())
+                .claim("username", user.getUsername())
+                .claim("full_name", user.getFullName())
+                .claim("email", user.getEmail())
+                .claim("primary_role", roleName)
+                .claim("roles", List.of("ROLE_" + roleName))
+                .signWith(signingKey, Jwts.SIG.HS256)
+                .compact();
+    }
+
     public String generateToken(String username, Collection<String> roles) {
         Instant now = Instant.now();
 
@@ -76,6 +97,15 @@ public class JwtTokenProvider {
 
     public long getExpirationMs() {
         return expirationMs;
+    }
+
+    private String normalizeRoleName(Role role) {
+        String roleName = role != null ? role.getRoleName() : null;
+        if (!StringUtils.hasText(roleName)) {
+            return "USER";
+        }
+        String trimmed = roleName.trim().toUpperCase();
+        return trimmed.startsWith("ROLE_") ? trimmed.substring(5) : trimmed;
     }
 
     private Claims extractAllClaims(String token) {
@@ -115,4 +145,3 @@ public class JwtTokenProvider {
         return Keys.hmacShaKeyFor(keyBytes);
     }
 }
-

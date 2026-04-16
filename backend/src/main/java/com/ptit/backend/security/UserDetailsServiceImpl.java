@@ -19,8 +19,10 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 
     @Override
     @Transactional(readOnly = true)
-    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        User user = userRepository.findByUsername(username)
+    public UserDetails loadUserByUsername(String usernameOrEmail) throws UsernameNotFoundException {
+        String normalized = String.valueOf(usernameOrEmail).trim();
+
+        User user = userRepository.findFirstByUsernameIgnoreCaseOrEmailIgnoreCase(normalized, normalized)
                 .orElseThrow(() -> new UsernameNotFoundException("Khong tim thay nguoi dung"));
 
         String normalizedRole = normalizeRole(user);
@@ -41,7 +43,9 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         }
 
         String trimmed = roleName.trim().toUpperCase();
+        if ("MANAGER".equals(trimmed)) {
+            return "ROLE_MANAGER";
+        }
         return trimmed.startsWith("ROLE_") ? trimmed : "ROLE_" + trimmed;
     }
 }
-
