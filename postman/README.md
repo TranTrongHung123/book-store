@@ -1,28 +1,91 @@
-# Bộ test Postman cho backend Bookstore
+# Bộ test Postman cho Bookstore backend
 
-## Thứ tự import
+## File cần import
 1. `postman/bookstore-local.postman_environment.json`
 2. `postman/bookstore-api.postman_collection.json`
 
 ## Thứ tự chạy khuyến nghị
 1. `00 - Auth`
-2. `01 - Security Guard`
-3. `02 - Users`
-4. `03 - Categories`
-5. `04 - Books`
-6. `05 - Orders`
-7. `06 - Rentals`
+2. `01 - Categories`
+3. `02 - Books`
+4. `03 - Users`
+5. `04 - Orders`
+6. `05 - Rentals`
+7. `06 - Firebase`
+8. `07 - Support`
+9. `08 - Staff Dashboard`
+10. `09 - Security Guard`
+11. `10 - Cleanup`
 
-## Biến quan trọng
-- `adminUsername` / `adminPassword`: tài khoản admin trên môi trường local
-- `userUsername` / `userPassword`: sẽ được ghi đè sau request `Register User`
-- `managedUserId`, `managedUsername`, `managedUserEmail`: tài khoản được tạo từ luồng đăng ký auth
-- `adminToken`, `userToken`: JWT dùng cho các API cần xác thực
-- `seedCategoryId`, `seedBookId`, `seedBookItemId`, `seedOrderId`, `seedRentalId`: ID mẫu để test các API chi tiết
+## Biến môi trường quan trọng
+- `baseUrl`: URL backend, mặc định `http://localhost:8081`
+- `adminUsername` / `adminPassword`: tài khoản admin dùng cho API quản trị
+- `managedUserPassword`: mật khẩu cho user tạo mới trong bước đăng ký
+- `adminToken`, `userToken`: JWT được lưu tự động sau khi login
+- `managedUserId`, `categoryId`, `bookId`, `orderId`, `rentalId`, `conversationId`: ID phát sinh trong quá trình test
+- `seedBookItemId`: `book_item_id` có thể thuê được (mặc định `1` theo seed)
 
-## Ghi chú
-- Bộ test này chỉ nhắm vào 6 controller hiện đang được implement trong backend.
-- Các request create / update / delete sẽ lưu ID trả về vào environment để dùng cho các bước sau.
-- `05 - Orders` đã có kịch bản kiểm thử ngưỡng tồn kho theo atomic update: tạo sách `total_stock=1`, lần đặt đầu thành công, lần đặt cùng dữ liệu tiếp theo phải lỗi `1005`.
-- Nếu dữ liệu auth local của bạn không khớp `admin / Admin@123`, hãy cập nhật lại environment trước khi chạy.
-- Request tạo rental thành công cần `book_item` có trạng thái khớp điều kiện service hiện tại (`San sang`).
+## Danh sách API có trong bộ test
+
+### 1) Auth
+- `POST /api/v1/auth/login`
+- `POST /api/v1/auth/register`
+
+### 2) Categories
+- `GET /api/v1/categories`
+- `GET /api/v1/categories/{id}`
+- `POST /api/v1/categories`
+- `PATCH /api/v1/categories/{id}`
+- `DELETE /api/v1/categories/{id}`
+
+### 3) Books
+- `GET /api/v1/books`
+- `GET /api/v1/books/{id}`
+- `POST /api/v1/books`
+- `PATCH /api/v1/books/{id}`
+- `DELETE /api/v1/books/{id}`
+
+### 4) Users
+- `GET /api/v1/users`
+- `GET /api/v1/users/{id}`
+- `PATCH /api/v1/users/{id}`
+- `DELETE /api/v1/users/{id}`
+
+### 5) Orders
+- `GET /api/v1/orders`
+- `GET /api/v1/orders/{id}`
+- `POST /api/v1/orders`
+- `PATCH /api/v1/orders/{id}`
+- `DELETE /api/v1/orders/{id}`
+
+### 6) Rentals
+- `GET /api/v1/rentals`
+- `GET /api/v1/rentals/{id}`
+- `POST /api/v1/rentals`
+- `PATCH /api/v1/rentals/{id}`
+- `DELETE /api/v1/rentals/{id}`
+
+### 7) Firebase
+- `GET /api/v1/firebase/custom-token`
+
+### 8) Support
+- `POST /api/v1/support/open`
+- `POST /api/v1/support/claim-waiting`
+- `PATCH /api/v1/support/{conversationId}/close`
+
+### 9) Staff Dashboard
+- `GET /api/v1/staff/dashboard/summary`
+
+### 10) Security Guard (kiểm thử phân quyền)
+- `GET /api/v1/users` không token -> `401`
+- `GET /api/v1/firebase/custom-token` không token -> `401`
+- `POST /api/v1/support/open` không token -> `401`
+- `GET /api/v1/staff/dashboard/summary` với `userToken` -> `403`
+- `POST /api/v1/support/claim-waiting` với `userToken` -> `403`
+- `POST /api/v1/categories` với `userToken` -> `403`
+
+## Lưu ý quan trọng
+- API Firebase/Support cần cấu hình Firebase Admin SDK hợp lệ (`GOOGLE_APPLICATION_CREDENTIALS` hoặc `FIREBASE_SERVICE_ACCOUNT_PATH`).
+- Nếu tài khoản admin local không phải `admin01 / Admin@123`, hãy sửa lại trong environment trước khi chạy.
+- Bộ test có bước `Cleanup` để xóa dữ liệu test đã tạo.
+- API rentals đang dùng mã thành công `code = 0` theo implementation hiện tại, không phải `1000`.

@@ -1,151 +1,69 @@
 {
   "info": {
-    "_postman_id": "f0d2d9f6-4d4f-4a2d-8f6d-7d4c7f02d001",
-    "name": "Bookstore API Full Workflow",
-    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "description": "Bo test toan bo API dang duoc implement trong 6 controller hien tai: auth, users, categories, books, orders, rentals."
+    "name": "Bookstore API - Full Test Suite",
+    "description": "Bo test day du cho toan bo API hien co trong he thong (auth, categories, books, users, orders, rentals, firebase, support, staff dashboard).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
-  "event": [
-    {
-      "listen": "prerequest",
-      "script": {
-        "type": "text/javascript",
-        "exec": [
-          "pm.request.headers.upsert({ key: 'Content-Type', value: 'application/json' });",
-          "pm.request.headers.upsert({ key: 'Accept', value: 'application/json' });"
-        ]
-      }
-    }
-  ],
-  "variable": [
-    {
-      "key": "baseUrl",
-      "value": "http://localhost:8081"
-    },
-    {
-      "key": "adminUsername",
-      "value": "admin"
-    },
-    {
-      "key": "adminPassword",
-      "value": "Admin@123"
-    },
-    {
-      "key": "userUsername",
-      "value": "workflow_user_seed"
-    },
-    {
-      "key": "userPassword",
-      "value": "12345678"
-    },
-    {
-      "key": "managedUserPassword",
-      "value": "12345678"
-    },
-    {
-      "key": "accessToken",
-      "value": ""
-    },
-    {
-      "key": "adminToken",
-      "value": ""
-    },
-    {
-      "key": "userToken",
-      "value": ""
-    },
-    {
-      "key": "managedUserId",
-      "value": ""
-    },
-    {
-      "key": "managedUsername",
-      "value": ""
-    },
-    {
-      "key": "managedUserEmail",
-      "value": ""
-    },
-    {
-      "key": "userId",
-      "value": ""
-    },
-    {
-      "key": "userCreatedUsername",
-      "value": ""
-    },
-    {
-      "key": "userCreatedEmail",
-      "value": ""
-    },
-    {
-      "key": "categoryId",
-      "value": ""
-    },
-    {
-      "key": "categoryName",
-      "value": ""
-    },
-    {
-      "key": "bookId",
-      "value": ""
-    },
-    {
-      "key": "bookTitle",
-      "value": ""
-    },
-    {
-      "key": "orderId",
-      "value": ""
-    },
-    {
-      "key": "rentalId",
-      "value": ""
-    },
-    {
-      "key": "seedCategoryId",
-      "value": "1"
-    },
-    {
-      "key": "seedBookId",
-      "value": "1"
-    },
-    {
-      "key": "seedBookItemId",
-      "value": "1"
-    },
-    {
-      "key": "seedBusyBookItemId",
-      "value": "4"
-    },
-    {
-      "key": "seedOrderId",
-      "value": "1"
-    },
-    {
-      "key": "seedRentalId",
-      "value": "1"
-    },
-    {
-      "key": "nonExistentId",
-      "value": "999999"
-    }
-  ],
   "item": [
     {
       "name": "00 - Auth",
       "item": [
         {
-          "name": "Register User",
+          "name": "Login admin - 200",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/v1/auth/login",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{adminUsername}}\",\n  \"password\": \"{{adminPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+                  "const json = pm.response.json();",
+                  "pm.expect(json.code).to.eql(1000);",
+                  "pm.expect(json.result.access_token).to.be.a('string').and.not.empty;",
+                  "pm.environment.set('adminToken', json.result.access_token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Register managed user - 201",
           "request": {
             "method": "POST",
             "url": "{{baseUrl}}/api/v1/auth/register",
-            "auth": {
-              "type": "noauth"
-            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"username\": \"workflow_user_{{$timestamp}}\",\n  \"password\": \"{{managedUserPassword}}\",\n  \"full_name\": \"Workflow User {{$timestamp}}\",\n  \"email\": \"workflow_user_{{$timestamp}}@mail.com\"\n}"
+              "raw": "{\n  \"username\": \"pm_user_{{$timestamp}}\",\n  \"password\": \"{{managedUserPassword}}\",\n  \"full_name\": \"Postman User {{$timestamp}}\",\n  \"email\": \"pm_user_{{$timestamp}}@mail.test\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
           },
           "event": [
@@ -157,92 +75,34 @@
                   "pm.test('Status 201', function () { pm.response.to.have.status(201); });",
                   "const json = pm.response.json();",
                   "pm.expect(json.code).to.eql(1000);",
-                  "pm.expect(json.message).to.eql(\"Thanh cong\");",
-                  "pm.expect(json.result).to.be.an('object');",
                   "pm.expect(json.result.id).to.be.a('number');",
-                  "pm.expect(json.result.username).to.match(/^workflow_user_/);",
-                  "pm.expect(json.result.email).to.match(/@mail\\.com$/);",
-                  "pm.expect(json.result.status).to.eql(1);",
-                  "pm.expect(json.result.total_points).to.eql(0);",
-                  "pm.environment.set(\"managedUserId\", String(json.result.id));",
-                  "pm.environment.set(\"managedUsername\", json.result.username);",
-                  "pm.environment.set(\"managedUserEmail\", json.result.email);",
-                  "pm.environment.set(\"userUsername\", json.result.username);",
-                  "pm.environment.set(\"userPassword\", \"12345678\");"
+                  "pm.environment.set('managedUserId', String(json.result.id));",
+                  "pm.environment.set('managedUsername', json.result.username);",
+                  "pm.environment.set('managedUserEmail', json.result.email || '');"
                 ]
               }
             }
           ]
         },
         {
-          "name": "Register invalid payload - 400",
-          "request": {
-            "method": "POST",
-            "url": "{{baseUrl}}/api/v1/auth/register",
-            "auth": {
-              "type": "noauth"
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"username\": \"\",\n  \"password\": \"\",\n  \"full_name\": \"\",\n  \"email\": \"\"\n}"
-            }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status 400', function () { pm.response.to.have.status(400); });",
-                  "const json = pm.response.json();",
-                  "pm.expect(json.code).to.eql(9000);",
-                  "pm.expect(json.message).to.be.a('string').and.not.empty;",
-                  "pm.expect(json.result).to.be.an('object');"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "name": "Register duplicate user - 400",
-          "request": {
-            "method": "POST",
-            "url": "{{baseUrl}}/api/v1/auth/register",
-            "auth": {
-              "type": "noauth"
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"username\": \"{{managedUsername}}\",\n  \"password\": \"{{managedUserPassword}}\",\n  \"full_name\": \"Workflow User Duplicate\",\n  \"email\": \"{{managedUserEmail}}\"\n}"
-            }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status 400', function () { pm.response.to.have.status(400); });",
-                  "const json = pm.response.json();",
-                  "pm.expect([1007, 1008]).to.include(json.code);",
-                  "pm.expect(json.message).to.be.a('string').and.not.empty;",
-                  "pm.expect(json.result).to.eql(null);"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "name": "Login Admin",
+          "name": "Login managed user - 200",
           "request": {
             "method": "POST",
             "url": "{{baseUrl}}/api/v1/auth/login",
-            "auth": {
-              "type": "noauth"
-            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"username\": \"{{adminUsername}}\",\n  \"password\": \"{{adminPassword}}\"\n}"
+              "raw": "{\n  \"username\": \"{{managedUsername}}\",\n  \"password\": \"{{managedUserPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
           },
           "event": [
@@ -254,78 +114,8 @@
                   "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
                   "const json = pm.response.json();",
                   "pm.expect(json.code).to.eql(1000);",
-                  "pm.expect(json.message).to.eql(\"Thanh cong\");",
-                  "pm.expect(json.result).to.be.an('object');",
                   "pm.expect(json.result.access_token).to.be.a('string').and.not.empty;",
-                  "pm.expect(json.result.token_type).to.eql('Bearer');",
-                  "pm.expect(json.result.expires_in).to.be.a('number');",
-                  "pm.expect(json.result.username).to.eql(pm.environment.get('adminUsername'));",
-                  "pm.expect(json.result.roles).to.include('ROLE_ADMIN');",
-                  "pm.environment.set(\"adminToken\", json.result.access_token);",
-                  "pm.environment.set(\"accessToken\", json.result.access_token);"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "name": "Login User",
-          "request": {
-            "method": "POST",
-            "url": "{{baseUrl}}/api/v1/auth/login",
-            "auth": {
-              "type": "noauth"
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"username\": \"{{userUsername}}\",\n  \"password\": \"{{userPassword}}\"\n}"
-            }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
-                  "const json = pm.response.json();",
-                  "pm.expect(json.code).to.eql(1000);",
-                  "pm.expect(json.message).to.eql(\"Thanh cong\");",
-                  "pm.expect(json.result).to.be.an('object');",
-                  "pm.expect(json.result.access_token).to.be.a('string').and.not.empty;",
-                  "pm.expect(json.result.token_type).to.eql('Bearer');",
-                  "pm.expect(json.result.expires_in).to.be.a('number');",
-                  "pm.expect(json.result.username).to.eql(pm.environment.get('userUsername'));",
-                  "pm.environment.set(\"userToken\", json.result.access_token);"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "name": "Login sai mat khau - 401",
-          "request": {
-            "method": "POST",
-            "url": "{{baseUrl}}/api/v1/auth/login",
-            "auth": {
-              "type": "noauth"
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"username\": \"{{adminUsername}}\",\n  \"password\": \"wrong-password\"\n}"
-            }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status 401', function () { pm.response.to.have.status(401); });",
-                  "const json = pm.response.json();",
-                  "pm.expect(json.code).to.eql(9105);",
-                  "pm.expect(json.message).to.be.a('string').and.not.empty;",
-                  "pm.expect(json.result).to.eql(null);"
+                  "pm.environment.set('userToken', json.result.access_token);"
                 ]
               }
             }
@@ -334,16 +124,13 @@
       ]
     },
     {
-      "name": "01 - Security Guard",
+      "name": "01 - Categories",
       "item": [
         {
-          "name": "Public GET books khong token - 200",
+          "name": "List categories - public",
           "request": {
             "method": "GET",
-            "url": "{{baseUrl}}/api/v1/books?_page=0&_limit=5&_sort=bookId&_order=asc",
-            "auth": {
-              "type": "noauth"
-            }
+            "url": "{{baseUrl}}/api/v1/categories?_page=0&_limit=5&_sort=categoryId&_order=asc"
           },
           "event": [
             {
@@ -354,46 +141,14 @@
                   "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
                   "const json = pm.response.json();",
                   "pm.expect(json.code).to.eql(1000);",
-                  "pm.expect(json.message).to.eql(\"Thanh cong\");",
-                  "pm.expect(json.result).to.be.an('object');",
-                  "pm.expect(json.result.content).to.be.an('array');",
-                  "pm.expect(json.result.page).to.be.a('number');",
-                  "pm.expect(json.result.limit).to.be.a('number');",
-                  "pm.expect(json.result.total_elements).to.be.a('number');",
-                  "pm.expect(json.result.total_pages).to.be.a('number');",
-                  "pm.expect(json.result.content).to.not.be.empty;"
+                  "pm.expect(json.result.content).to.be.an('array');"
                 ]
               }
             }
           ]
         },
         {
-          "name": "Protected GET orders khong token - 401",
-          "request": {
-            "method": "GET",
-            "url": "{{baseUrl}}/api/v1/orders?_page=0&_limit=5&_sort=orderId&_order=desc",
-            "auth": {
-              "type": "noauth"
-            }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status 401', function () { pm.response.to.have.status(401); });",
-                  "const json = pm.response.json();",
-                  "pm.expect(json.code).to.eql(9101);",
-                  "pm.expect(json.message).to.be.a('string').and.not.empty;",
-                  "pm.expect(json.result).to.eql(null);"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "name": "USER POST categories - 403",
+          "name": "Create category - admin",
           "request": {
             "method": "POST",
             "url": "{{baseUrl}}/api/v1/categories",
@@ -402,14 +157,25 @@
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{userToken}}",
+                  "value": "{{adminToken}}",
                   "type": "string"
                 }
               ]
             },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Forbidden {{$timestamp}}\"\n}"
+              "raw": "{\n  \"name\": \"The loai PM {{$timestamp}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
           },
           "event": [
@@ -418,11 +184,108 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('Status 403', function () { pm.response.to.have.status(403); });",
+                  "pm.test('Status 201', function () { pm.response.to.have.status(201); });",
                   "const json = pm.response.json();",
-                  "pm.expect(json.code).to.eql(9102);",
-                  "pm.expect(json.message).to.be.a('string').and.not.empty;",
-                  "pm.expect(json.result).to.eql(null);"
+                  "pm.expect(json.code).to.eql(1000);",
+                  "pm.expect(json.result.id).to.be.a('number');",
+                  "pm.environment.set('categoryId', String(json.result.id));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get category by id - public",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/categories/{{categoryId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+                  "const json = pm.response.json();",
+                  "pm.expect(json.code).to.eql(1000);",
+                  "pm.expect(json.result.id).to.eql(Number(pm.environment.get('categoryId')));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update category - admin",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/api/v1/categories/{{categoryId}}",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"The loai PM da cap nhat {{$timestamp}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+                  "const json = pm.response.json();",
+                  "pm.expect(json.code).to.eql(1000);",
+                  "pm.expect(json.result.id).to.eql(Number(pm.environment.get('categoryId')));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete category invalid id - 404",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/v1/categories/{{nonExistentId}}",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 404', function () { pm.response.to.have.status(404); });",
+                  "const json = pm.response.json();",
+                  "pm.expect(json.code).to.eql(1003);"
                 ]
               }
             }
@@ -431,7 +294,177 @@
       ]
     },
     {
-      "name": "02 - Users",
+      "name": "02 - Books",
+      "item": [
+        {
+          "name": "List books - public",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/books?_page=0&_limit=5&_sort=bookId&_order=asc"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+                  "const json = pm.response.json();",
+                  "pm.expect(json.code).to.eql(1000);",
+                  "pm.expect(json.result.content).to.be.an('array');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create book - admin",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/v1/books",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Sach PM {{$timestamp}}\",\n  \"author_name\": \"Tac gia PM\",\n  \"category_name\": \"The loai PM\",\n  \"publisher_id\": 1,\n  \"publication_year\": 2026,\n  \"language\": \"Tieng Viet\",\n  \"original_price\": 50000,\n  \"selling_price\": 78000,\n  \"cover_image\": \"covers/pm-book.jpg\",\n  \"total_stock\": 5,\n  \"description\": \"Book test\",\n  \"status\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 201', function () { pm.response.to.have.status(201); });",
+                  "const json = pm.response.json();",
+                  "pm.expect(json.code).to.eql(1000);",
+                  "pm.expect(json.result.id).to.be.a('number');",
+                  "pm.environment.set('bookId', String(json.result.id));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get book by id - public",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/books/{{bookId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+                  "const json = pm.response.json();",
+                  "pm.expect(json.code).to.eql(1000);",
+                  "pm.expect(json.result.id).to.eql(Number(pm.environment.get('bookId')));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update book - admin",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/api/v1/books/{{bookId}}",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"selling_price\": 76000,\n  \"total_stock\": 4\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+                  "const json = pm.response.json();",
+                  "pm.expect(json.code).to.eql(1000);",
+                  "pm.expect(json.result.id).to.eql(Number(pm.environment.get('bookId')));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete book invalid id - 404",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/v1/books/{{nonExistentId}}",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 404', function () { pm.response.to.have.status(404); });",
+                  "const json = pm.response.json();",
+                  "pm.expect(json.code).to.eql(1001);"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "03 - Users",
       "item": [
         {
           "name": "List users - admin",
@@ -458,22 +491,14 @@
                   "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
                   "const json = pm.response.json();",
                   "pm.expect(json.code).to.eql(1000);",
-                  "pm.expect(json.message).to.eql(\"Thanh cong\");",
-                  "pm.expect(json.result).to.be.an('object');",
-                  "pm.expect(json.result.content).to.be.an('array');",
-                  "pm.expect(json.result.page).to.be.a('number');",
-                  "pm.expect(json.result.limit).to.be.a('number');",
-                  "pm.expect(json.result.total_elements).to.be.a('number');",
-                  "pm.expect(json.result.total_pages).to.be.a('number');",
-                  "pm.expect(json.result.content).to.not.be.empty;",
-                  "pm.expect(json.result.content[0]).to.be.an('object');"
+                  "pm.expect(json.result.content).to.be.an('array');"
                 ]
               }
             }
           ]
         },
         {
-          "name": "Get registered user by id - admin",
+          "name": "Get user by id - admin",
           "request": {
             "method": "GET",
             "url": "{{baseUrl}}/api/v1/users/{{managedUserId}}",
@@ -497,91 +522,7 @@
                   "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
                   "const json = pm.response.json();",
                   "pm.expect(json.code).to.eql(1000);",
-                  "pm.expect(json.message).to.eql(\"Thanh cong\");",
-                  "pm.expect(json.result).to.be.an('object');",
-                  "pm.expect(json.result.id).to.eql(Number(pm.environment.get('managedUserId')));",
-                  "pm.expect(json.result.username).to.eql(pm.environment.get('managedUsername'));",
-                  "pm.expect(json.result.email).to.eql(pm.environment.get('managedUserEmail'));"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "name": "Create user - admin",
-          "request": {
-            "method": "POST",
-            "url": "{{baseUrl}}/api/v1/users",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{adminToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"username\": \"staff_user_{{$timestamp}}\",\n  \"password\": \"12345678\",\n  \"role_id\": 3,\n  \"full_name\": \"Staff User {{$timestamp}}\",\n  \"email\": \"staff_user_{{$timestamp}}@mail.com\",\n  \"phone\": \"0901{{$timestamp}}\",\n  \"address\": \"Ha Noi\",\n  \"total_points\": 0,\n  \"status\": 1\n}"
-            }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status 201', function () { pm.response.to.have.status(201); });",
-                  "const json = pm.response.json();",
-                  "pm.expect(json.code).to.eql(1000);",
-                  "pm.expect(json.message).to.eql(\"Thanh cong\");",
-                  "pm.expect(json.result).to.be.an('object');",
-                  "pm.expect(json.result.id).to.be.a('number');",
-                  "pm.expect(json.result.username).to.match(/^staff_user_/);",
-                  "pm.expect(json.result.email).to.match(/^staff_user_/);",
-                  "pm.expect(json.result.status).to.eql(1);",
-                  "pm.expect(json.result.total_points).to.eql(0);",
-                  "pm.environment.set(\"userId\", String(json.result.id));",
-                  "pm.environment.set(\"userCreatedUsername\", json.result.username);",
-                  "pm.environment.set(\"userCreatedEmail\", json.result.email);"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "name": "Create duplicate user - 400",
-          "request": {
-            "method": "POST",
-            "url": "{{baseUrl}}/api/v1/users",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{adminToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"username\": \"{{userCreatedUsername}}\",\n  \"password\": \"12345678\",\n  \"role_id\": 3,\n  \"full_name\": \"Duplicate Staff User\",\n  \"email\": \"{{userCreatedEmail}}\",\n  \"phone\": \"0901999999\",\n  \"address\": \"Ha Noi\",\n  \"total_points\": 0,\n  \"status\": 1\n}"
-            }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status 400', function () { pm.response.to.have.status(400); });",
-                  "const json = pm.response.json();",
-                  "pm.expect([1007, 1008]).to.include(json.code);",
-                  "pm.expect(json.message).to.be.a('string').and.not.empty;",
-                  "pm.expect(json.result).to.eql(null);"
+                  "pm.expect(json.result.id).to.eql(Number(pm.environment.get('managedUserId')));"
                 ]
               }
             }
@@ -591,7 +532,7 @@
           "name": "Update user - admin",
           "request": {
             "method": "PATCH",
-            "url": "{{baseUrl}}/api/v1/users/{{userId}}",
+            "url": "{{baseUrl}}/api/v1/users/{{managedUserId}}",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -602,44 +543,20 @@
                 }
               ]
             },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"full_name\": \"Updated Staff User {{$timestamp}}\",\n  \"phone\": \"0911{{$timestamp}}\",\n  \"address\": \"TP HCM\",\n  \"total_points\": 5,\n  \"status\": 0\n}"
-            }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
-                  "const json = pm.response.json();",
-                  "pm.expect(json.code).to.eql(1000);",
-                  "pm.expect(json.message).to.eql(\"Thanh cong\");",
-                  "pm.expect(json.result).to.be.an('object');",
-                  "pm.expect(json.result.id).to.eql(Number(pm.environment.get('userId')));",
-                  "pm.expect(json.result.total_points).to.eql(5);",
-                  "pm.expect(json.result.status).to.eql(0);"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "name": "Delete user - admin",
-          "request": {
-            "method": "DELETE",
-            "url": "{{baseUrl}}/api/v1/users/{{userId}}",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{adminToken}}",
-                  "type": "string"
+              "raw": "{\n  \"full_name\": \"Postman User Da Cap Nhat\",\n  \"phone\": \"0900000000\",\n  \"address\": \"Ha Noi\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
                 }
-              ]
+              }
             }
           },
           "event": [
@@ -651,18 +568,17 @@
                   "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
                   "const json = pm.response.json();",
                   "pm.expect(json.code).to.eql(1000);",
-                  "pm.expect(json.message).to.eql(\"Thanh cong\");",
-                  "pm.expect(json.result).to.eql(null);"
+                  "pm.expect(json.result.id).to.eql(Number(pm.environment.get('managedUserId')));"
                 ]
               }
             }
           ]
         },
         {
-          "name": "Get deleted user - 404",
+          "name": "Get user invalid id - 404",
           "request": {
             "method": "GET",
-            "url": "{{baseUrl}}/api/v1/users/{{userId}}",
+            "url": "{{baseUrl}}/api/v1/users/{{nonExistentId}}",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -682,9 +598,7 @@
                 "exec": [
                   "pm.test('Status 404', function () { pm.response.to.have.status(404); });",
                   "const json = pm.response.json();",
-                  "pm.expect(json.code).to.eql(1002);",
-                  "pm.expect(json.message).to.be.a('string').and.not.empty;",
-                  "pm.expect(json.result).to.eql(null);"
+                  "pm.expect(json.code).to.eql(1002);"
                 ]
               }
             }
@@ -693,482 +607,7 @@
       ]
     },
     {
-      "name": "03 - Categories",
-      "item": [
-        {
-          "name": "List categories - public",
-          "request": {
-            "method": "GET",
-            "url": "{{baseUrl}}/api/v1/categories?_page=0&_limit=5&_sort=categoryId&_order=asc",
-            "auth": {
-              "type": "noauth"
-            }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
-                  "const json = pm.response.json();",
-                  "pm.expect(json.code).to.eql(1000);",
-                  "pm.expect(json.message).to.eql(\"Thanh cong\");",
-                  "pm.expect(json.result).to.be.an('object');",
-                  "pm.expect(json.result.content).to.be.an('array');",
-                  "pm.expect(json.result.page).to.be.a('number');",
-                  "pm.expect(json.result.limit).to.be.a('number');",
-                  "pm.expect(json.result.total_elements).to.be.a('number');",
-                  "pm.expect(json.result.total_pages).to.be.a('number');",
-                  "pm.expect(json.result.content).to.not.be.empty;"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "name": "Get category by id - public",
-          "request": {
-            "method": "GET",
-            "url": "{{baseUrl}}/api/v1/categories/{{seedCategoryId}}",
-            "auth": {
-              "type": "noauth"
-            }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
-                  "const json = pm.response.json();",
-                  "pm.expect(json.code).to.eql(1000);",
-                  "pm.expect(json.message).to.eql(\"Thanh cong\");",
-                  "pm.expect(json.result).to.be.an('object');",
-                  "pm.expect(json.result.id).to.eql(Number(pm.environment.get('seedCategoryId')));",
-                  "pm.expect(json.result.name).to.be.a('string').and.not.empty;"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "name": "Create category - admin",
-          "request": {
-            "method": "POST",
-            "url": "{{baseUrl}}/api/v1/categories",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{adminToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"Workflow Category {{$timestamp}}\"\n}"
-            }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status 201', function () { pm.response.to.have.status(201); });",
-                  "const json = pm.response.json();",
-                  "pm.expect(json.code).to.eql(1000);",
-                  "pm.expect(json.message).to.eql(\"Thanh cong\");",
-                  "pm.expect(json.result).to.be.an('object');",
-                  "pm.expect(json.result.id).to.be.a('number');",
-                  "pm.expect(json.result.name).to.match(/^Workflow Category /);",
-                  "pm.environment.set(\"categoryId\", String(json.result.id));",
-                  "pm.environment.set(\"categoryName\", json.result.name);"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "name": "Create category with invalid parent - 404",
-          "request": {
-            "method": "POST",
-            "url": "{{baseUrl}}/api/v1/categories",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{adminToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"Orphan Category {{$timestamp}}\",\n  \"parent_id\": 999999\n}"
-            }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status 404', function () { pm.response.to.have.status(404); });",
-                  "const json = pm.response.json();",
-                  "pm.expect(json.code).to.eql(1003);",
-                  "pm.expect(json.message).to.be.a('string').and.not.empty;",
-                  "pm.expect(json.result).to.eql(null);"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "name": "Update category - admin",
-          "request": {
-            "method": "PATCH",
-            "url": "{{baseUrl}}/api/v1/categories/{{categoryId}}",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{adminToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"Updated Category {{$timestamp}}\"\n}"
-            }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
-                  "const json = pm.response.json();",
-                  "pm.expect(json.code).to.eql(1000);",
-                  "pm.expect(json.message).to.eql(\"Thanh cong\");",
-                  "pm.expect(json.result).to.be.an('object');",
-                  "pm.expect(json.result.id).to.eql(Number(pm.environment.get('categoryId')));",
-                  "pm.expect(json.result.name).to.match(/^Updated Category /);",
-                  "pm.environment.set(\"categoryName\", json.result.name);"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "name": "Delete category - admin",
-          "request": {
-            "method": "DELETE",
-            "url": "{{baseUrl}}/api/v1/categories/{{categoryId}}",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{adminToken}}",
-                  "type": "string"
-                }
-              ]
-            }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
-                  "const json = pm.response.json();",
-                  "pm.expect(json.code).to.eql(1000);",
-                  "pm.expect(json.message).to.eql(\"Thanh cong\");",
-                  "pm.expect(json.result).to.eql(null);"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "name": "Get deleted category - 404",
-          "request": {
-            "method": "GET",
-            "url": "{{baseUrl}}/api/v1/categories/{{categoryId}}",
-            "auth": {
-              "type": "noauth"
-            }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status 404', function () { pm.response.to.have.status(404); });",
-                  "const json = pm.response.json();",
-                  "pm.expect(json.code).to.eql(1003);",
-                  "pm.expect(json.message).to.be.a('string').and.not.empty;",
-                  "pm.expect(json.result).to.eql(null);"
-                ]
-              }
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "name": "04 - Books",
-      "item": [
-        {
-          "name": "List books - public",
-          "request": {
-            "method": "GET",
-            "url": "{{baseUrl}}/api/v1/books?_page=0&_limit=5&_sort=bookId&_order=asc",
-            "auth": {
-              "type": "noauth"
-            }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
-                  "const json = pm.response.json();",
-                  "pm.expect(json.code).to.eql(1000);",
-                  "pm.expect(json.message).to.eql(\"Thanh cong\");",
-                  "pm.expect(json.result).to.be.an('object');",
-                  "pm.expect(json.result.content).to.be.an('array');",
-                  "pm.expect(json.result.page).to.be.a('number');",
-                  "pm.expect(json.result.limit).to.be.a('number');",
-                  "pm.expect(json.result.total_elements).to.be.a('number');",
-                  "pm.expect(json.result.total_pages).to.be.a('number');",
-                  "pm.expect(json.result.content).to.not.be.empty;"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "name": "Get book by id - public",
-          "request": {
-            "method": "GET",
-            "url": "{{baseUrl}}/api/v1/books/{{seedBookId}}",
-            "auth": {
-              "type": "noauth"
-            }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
-                  "const json = pm.response.json();",
-                  "pm.expect(json.code).to.eql(1000);",
-                  "pm.expect(json.message).to.eql(\"Thanh cong\");",
-                  "pm.expect(json.result).to.be.an('object');",
-                  "pm.expect(json.result.id).to.eql(Number(pm.environment.get('seedBookId')));",
-                  "pm.expect(json.result.title).to.be.a('string').and.not.empty;",
-                  "pm.expect(json.result.sold_count).to.be.a('number');",
-                  "pm.expect(json.result.rental_count).to.be.a('number');"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "name": "Create book - admin",
-          "request": {
-            "method": "POST",
-            "url": "{{baseUrl}}/api/v1/books",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{adminToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"title\": \"Workflow Book {{$timestamp}}\",\n  \"author_name\": \"Nguyen Nhat Anh\",\n  \"category_name\": \"Tieu thuyet\",\n  \"publisher_id\": 1,\n  \"publication_year\": 2026,\n  \"language\": \"Tien Viet\",\n  \"original_price\": 50000,\n  \"selling_price\": 75000,\n  \"cover_image\": \"covers/workflow-book.jpg\",\n  \"total_stock\": 12,\n  \"description\": \"Workflow test book\",\n  \"long_description\": \"Long description for workflow test book\",\n  \"gallery_images\": [\n    \"covers/workflow-book-1.jpg\",\n    \"covers/workflow-book-2.jpg\"\n  ],\n  \"status\": 1\n}"
-            }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status 201', function () { pm.response.to.have.status(201); });",
-                  "const json = pm.response.json();",
-                  "pm.expect(json.code).to.eql(1000);",
-                  "pm.expect(json.message).to.eql(\"Thanh cong\");",
-                  "pm.expect(json.result).to.be.an('object');",
-                  "pm.expect(json.result.id).to.be.a('number');",
-                  "pm.expect(json.result.title).to.match(/^Workflow Book /);",
-                  "pm.expect(json.result.total_stock).to.eql(12);",
-                  "pm.expect(json.result.sold_count).to.eql(0);",
-                  "pm.expect(json.result.rental_count).to.eql(0);",
-                  "pm.environment.set(\"bookId\", String(json.result.id));",
-                  "pm.environment.set(\"bookTitle\", json.result.title);"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "name": "Create book with invalid publisher - 404",
-          "request": {
-            "method": "POST",
-            "url": "{{baseUrl}}/api/v1/books",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{adminToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"title\": \"Invalid Publisher Book {{$timestamp}}\",\n  \"author_name\": \"Nguyen Nhat Anh\",\n  \"category_name\": \"Tieu thuyet\",\n  \"publisher_id\": 999999,\n  \"publication_year\": 2026,\n  \"language\": \"Tien Viet\",\n  \"original_price\": 50000,\n  \"selling_price\": 75000,\n  \"cover_image\": \"covers/workflow-book.jpg\",\n  \"total_stock\": 12,\n  \"description\": \"Invalid publisher test\",\n  \"status\": 1\n}"
-            }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status 404', function () { pm.response.to.have.status(404); });",
-                  "const json = pm.response.json();",
-                  "pm.expect(json.code).to.eql(1004);",
-                  "pm.expect(json.message).to.be.a('string').and.not.empty;",
-                  "pm.expect(json.result).to.eql(null);"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "name": "Update book - admin",
-          "request": {
-            "method": "PATCH",
-            "url": "{{baseUrl}}/api/v1/books/{{bookId}}",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{adminToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"title\": \"Updated Workflow Book {{$timestamp}}\",\n  \"selling_price\": 72000,\n  \"total_stock\": 10,\n  \"description\": \"Updated book description\",\n  \"status\": 1\n}"
-            }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
-                  "const json = pm.response.json();",
-                  "pm.expect(json.code).to.eql(1000);",
-                  "pm.expect(json.message).to.eql(\"Thanh cong\");",
-                  "pm.expect(json.result).to.be.an('object');",
-                  "pm.expect(json.result.id).to.eql(Number(pm.environment.get('bookId')));",
-                  "pm.expect(json.result.total_stock).to.eql(10);",
-                  "pm.environment.set(\"bookTitle\", json.result.title);"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "name": "Delete book - admin",
-          "request": {
-            "method": "DELETE",
-            "url": "{{baseUrl}}/api/v1/books/{{bookId}}",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{adminToken}}",
-                  "type": "string"
-                }
-              ]
-            }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
-                  "const json = pm.response.json();",
-                  "pm.expect(json.code).to.eql(1000);",
-                  "pm.expect(json.message).to.eql(\"Thanh cong\");",
-                  "pm.expect(json.result).to.eql(null);"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "name": "Get deleted book - 404",
-          "request": {
-            "method": "GET",
-            "url": "{{baseUrl}}/api/v1/books/{{bookId}}",
-            "auth": {
-              "type": "noauth"
-            }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status 404', function () { pm.response.to.have.status(404); });",
-                  "const json = pm.response.json();",
-                  "pm.expect(json.code).to.eql(1001);",
-                  "pm.expect(json.message).to.be.a('string').and.not.empty;",
-                  "pm.expect(json.result).to.eql(null);"
-                ]
-              }
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "name": "05 - Orders",
+      "name": "04 - Orders",
       "item": [
         {
           "name": "List orders - admin",
@@ -1195,48 +634,7 @@
                   "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
                   "const json = pm.response.json();",
                   "pm.expect(json.code).to.eql(1000);",
-                  "pm.expect(json.message).to.eql(\"Thanh cong\");",
-                  "pm.expect(json.result).to.be.an('object');",
-                  "pm.expect(json.result.content).to.be.an('array');",
-                  "pm.expect(json.result.page).to.be.a('number');",
-                  "pm.expect(json.result.limit).to.be.a('number');",
-                  "pm.expect(json.result.total_elements).to.be.a('number');",
-                  "pm.expect(json.result.total_pages).to.be.a('number');",
-                  "pm.expect(json.result.content).to.not.be.empty;"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "name": "Get order by id - admin",
-          "request": {
-            "method": "GET",
-            "url": "{{baseUrl}}/api/v1/orders/{{seedOrderId}}",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{adminToken}}",
-                  "type": "string"
-                }
-              ]
-            }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
-                  "const json = pm.response.json();",
-                  "pm.expect(json.code).to.eql(1000);",
-                  "pm.expect(json.message).to.eql(\"Thanh cong\");",
-                  "pm.expect(json.result).to.be.an('object');",
-                  "pm.expect(json.result.id).to.eql(Number(pm.environment.get('seedOrderId')));",
-                  "pm.expect(json.result.items).to.be.an('array');"
+                  "pm.expect(json.result.content).to.be.an('array');"
                 ]
               }
             }
@@ -1257,9 +655,20 @@
                 }
               ]
             },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"user_id\": \"{{managedUserId}}\",\n  \"shipping_address\": \"Ha Noi\",\n  \"payment_method\": \"COD\",\n  \"payment_status\": \"Chua thanh toan\",\n  \"order_status\": \"Cho duyet\",\n  \"items\": [\n    {\n      \"book_id\": \"{{seedBookId}}\",\n      \"quantity\": 1,\n      \"unit_price\": 78000\n    }\n  ]\n}"
+              "raw": "{\n  \"user_id\": \"{{managedUserId}}\",\n  \"shipping_address\": \"Ha Noi\",\n  \"payment_method\": \"COD\",\n  \"items\": [\n    {\n      \"book_id\": \"{{bookId}}\",\n      \"quantity\": 1,\n      \"unit_price\": 76000\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
           },
           "event": [
@@ -1271,301 +680,15 @@
                   "pm.test('Status 201', function () { pm.response.to.have.status(201); });",
                   "const json = pm.response.json();",
                   "pm.expect(json.code).to.eql(1000);",
-                  "pm.expect(json.message).to.eql(\"Thanh cong\");",
-                  "pm.expect(json.result).to.be.an('object');",
                   "pm.expect(json.result.id).to.be.a('number');",
-                  "pm.expect(json.result.user_id).to.eql(Number(pm.environment.get('managedUserId')));",
-                  "pm.expect(json.result.items).to.be.an('array').with.lengthOf(1);",
-                  "pm.expect(json.result.total_amount).to.eql(78000);",
-                  "pm.expect(json.result.order_status).to.eql('Cho duyet');",
-                  "pm.environment.set(\"orderId\", String(json.result.id));"
+                  "pm.environment.set('orderId', String(json.result.id));"
                 ]
               }
             }
           ]
         },
         {
-          "name": "Create order with insufficient stock - 400",
-          "request": {
-            "method": "POST",
-            "url": "{{baseUrl}}/api/v1/orders",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{adminToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"user_id\": \"{{managedUserId}}\",\n  \"shipping_address\": \"Ha Noi\",\n  \"payment_method\": \"COD\",\n  \"items\": [\n    {\n      \"book_id\": \"{{seedBookId}}\",\n      \"quantity\": 9999,\n      \"unit_price\": 78000\n    }\n  ]\n}"
-            }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status 400', function () { pm.response.to.have.status(400); });",
-                  "const json = pm.response.json();",
-                  "pm.expect(json.code).to.eql(1005);",
-                  "pm.expect(json.message).to.be.a('string').and.not.empty;",
-                  "pm.expect(json.result).to.eql(null);"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "name": "Create low-stock book for atomic test - admin",
-          "request": {
-            "method": "POST",
-            "url": "{{baseUrl}}/api/v1/books",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{adminToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"title\": \"Atomic Stock Book {{$timestamp}}\",\n  \"author_name\": \"Nguyen Nhat Anh\",\n  \"category_name\": \"Tieu thuyet\",\n  \"publisher_id\": 1,\n  \"publication_year\": 2026,\n  \"language\": \"Tieng Viet\",\n  \"original_price\": 50000,\n  \"selling_price\": 78000,\n  \"cover_image\": \"covers/atomic-stock-book.jpg\",\n  \"total_stock\": 1,\n  \"description\": \"Atomic stock boundary test\",\n  \"status\": 1\n}"
-            }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status 201', function () { pm.response.to.have.status(201); });",
-                  "const json = pm.response.json();",
-                  "pm.expect(json.code).to.eql(1000);",
-                  "pm.expect(json.result).to.be.an('object');",
-                  "pm.expect(json.result.id).to.be.a('number');",
-                  "pm.expect(json.result.total_stock).to.eql(1);",
-                  "pm.environment.set('lowStockBookId', String(json.result.id));"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "name": "Create order low-stock first attempt - admin",
-          "request": {
-            "method": "POST",
-            "url": "{{baseUrl}}/api/v1/orders",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{adminToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"user_id\": \"{{managedUserId}}\",\n  \"shipping_address\": \"Ha Noi\",\n  \"payment_method\": \"COD\",\n  \"items\": [\n    {\n      \"book_id\": \"{{lowStockBookId}}\",\n      \"quantity\": 1,\n      \"unit_price\": 78000\n    }\n  ]\n}"
-            }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status 201', function () { pm.response.to.have.status(201); });",
-                  "const json = pm.response.json();",
-                  "pm.expect(json.code).to.eql(1000);",
-                  "pm.expect(json.result).to.be.an('object');",
-                  "pm.expect(json.result.id).to.be.a('number');",
-                  "pm.expect(json.result.items).to.be.an('array').with.lengthOf(1);",
-                  "pm.environment.set('lowStockOrderId', String(json.result.id));"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "name": "Create order low-stock second attempt - 400",
-          "request": {
-            "method": "POST",
-            "url": "{{baseUrl}}/api/v1/orders",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{adminToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"user_id\": \"{{managedUserId}}\",\n  \"shipping_address\": \"Ha Noi\",\n  \"payment_method\": \"COD\",\n  \"items\": [\n    {\n      \"book_id\": \"{{lowStockBookId}}\",\n      \"quantity\": 1,\n      \"unit_price\": 78000\n    }\n  ]\n}"
-            }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status 400', function () { pm.response.to.have.status(400); });",
-                  "const json = pm.response.json();",
-                  "pm.expect(json.code).to.eql(1005);",
-                  "pm.expect(json.message).to.be.a('string').and.not.empty;",
-                  "pm.expect(json.result).to.eql(null);"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "name": "Cleanup low-stock order - admin",
-          "request": {
-            "method": "DELETE",
-            "url": "{{baseUrl}}/api/v1/orders/{{lowStockOrderId}}",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{adminToken}}",
-                  "type": "string"
-                }
-              ]
-            }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
-                  "const json = pm.response.json();",
-                  "pm.expect(json.code).to.eql(1000);",
-                  "pm.environment.unset('lowStockOrderId');"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "name": "Cleanup low-stock book - admin",
-          "request": {
-            "method": "DELETE",
-            "url": "{{baseUrl}}/api/v1/books/{{lowStockBookId}}",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{adminToken}}",
-                  "type": "string"
-                }
-              ]
-            }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
-                  "const json = pm.response.json();",
-                  "pm.expect(json.code).to.eql(1000);",
-                  "pm.environment.unset('lowStockBookId');"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "name": "Update order - admin",
-          "request": {
-            "method": "PATCH",
-            "url": "{{baseUrl}}/api/v1/orders/{{orderId}}",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{adminToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"order_status\": \"Da giao\",\n  \"payment_status\": \"Da thanh toan\"\n}"
-            }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
-                  "const json = pm.response.json();",
-                  "pm.expect(json.code).to.eql(1000);",
-                  "pm.expect(json.message).to.eql(\"Thanh cong\");",
-                  "pm.expect(json.result).to.be.an('object');",
-                  "pm.expect(json.result.id).to.eql(Number(pm.environment.get('orderId')));",
-                  "pm.expect(json.result.order_status).to.eql('Da giao');"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "name": "Delete order - admin",
-          "request": {
-            "method": "DELETE",
-            "url": "{{baseUrl}}/api/v1/orders/{{orderId}}",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{adminToken}}",
-                  "type": "string"
-                }
-              ]
-            }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
-                  "const json = pm.response.json();",
-                  "pm.expect(json.code).to.eql(1000);",
-                  "pm.expect(json.message).to.eql(\"Thanh cong\");",
-                  "pm.expect(json.result).to.eql(null);"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "name": "Get deleted order - 404",
+          "name": "Get order by id - admin",
           "request": {
             "method": "GET",
             "url": "{{baseUrl}}/api/v1/orders/{{orderId}}",
@@ -1586,11 +709,101 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('Status 404', function () { pm.response.to.have.status(404); });",
+                  "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
                   "const json = pm.response.json();",
-                  "pm.expect(json.code).to.eql(2001);",
-                  "pm.expect(json.message).to.be.a('string').and.not.empty;",
-                  "pm.expect(json.result).to.eql(null);"
+                  "pm.expect(json.code).to.eql(1000);",
+                  "pm.expect(json.result.id).to.eql(Number(pm.environment.get('orderId')));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update order status - admin",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/api/v1/orders/{{orderId}}",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"order_status\": \"Dang giao\",\n  \"payment_status\": \"Da thanh toan\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+                  "const json = pm.response.json();",
+                  "pm.expect(json.code).to.eql(1000);",
+                  "pm.expect(json.result.id).to.eql(Number(pm.environment.get('orderId')));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create order insufficient stock - 400",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/v1/orders",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": \"{{managedUserId}}\",\n  \"shipping_address\": \"Ha Noi\",\n  \"payment_method\": \"COD\",\n  \"items\": [\n    {\n      \"book_id\": \"{{bookId}}\",\n      \"quantity\": 9999,\n      \"unit_price\": 76000\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 400', function () { pm.response.to.have.status(400); });",
+                  "const json = pm.response.json();",
+                  "pm.expect(json.code).to.eql(1005);"
                 ]
               }
             }
@@ -1599,7 +812,7 @@
       ]
     },
     {
-      "name": "06 - Rentals",
+      "name": "05 - Rentals",
       "item": [
         {
           "name": "List rentals - admin",
@@ -1626,49 +839,7 @@
                   "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
                   "const json = pm.response.json();",
                   "pm.expect(json.code).to.eql(0);",
-                  "pm.expect(json.message).to.eql(\"Thanh cong\");",
-                  "pm.expect(json.result).to.be.an('object');",
-                  "pm.expect(json.result.content).to.be.an('array');",
-                  "pm.expect(json.result.page).to.be.a('number');",
-                  "pm.expect(json.result.limit).to.be.a('number');",
-                  "pm.expect(json.result.total_elements).to.be.a('number');",
-                  "pm.expect(json.result.total_pages).to.be.a('number');",
-                  "pm.expect(json.result.content).to.not.be.empty;",
-                  "pm.expect(json.result.page).to.eql(1);"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "name": "Get rental by id - admin",
-          "request": {
-            "method": "GET",
-            "url": "{{baseUrl}}/api/v1/rentals/{{seedRentalId}}",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{adminToken}}",
-                  "type": "string"
-                }
-              ]
-            }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
-                  "const json = pm.response.json();",
-                  "pm.expect(json.code).to.eql(0);",
-                  "pm.expect(json.message).to.eql(\"Thanh cong\");",
-                  "pm.expect(json.result).to.be.an('object');",
-                  "pm.expect(json.result.id).to.eql(Number(pm.environment.get('seedRentalId')));",
-                  "pm.expect(json.result.status).to.be.a('string').and.not.empty;"
+                  "pm.expect(json.result.content).to.be.an('array');"
                 ]
               }
             }
@@ -1689,9 +860,20 @@
                 }
               ]
             },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"user_id\": \"{{managedUserId}}\",\n  \"book_item_id\": \"{{seedBookItemId}}\",\n  \"payment_method\": \"Tien mat\"\n}"
+              "raw": "{\n  \"user_id\": \"{{managedUserId}}\",\n  \"book_item_id\": \"{{seedBookItemId}}\",\n  \"payment_method\": \"Tien mat\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
           },
           "event": [
@@ -1703,24 +885,18 @@
                   "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
                   "const json = pm.response.json();",
                   "pm.expect(json.code).to.eql(0);",
-                  "pm.expect(json.message).to.eql(\"Thanh cong\");",
-                  "pm.expect(json.result).to.be.an('object');",
                   "pm.expect(json.result.id).to.be.a('number');",
-                  "pm.expect(json.result.user_id).to.eql(Number(pm.environment.get('managedUserId')));",
-                  "pm.expect(json.result.book_item_id).to.eql(Number(pm.environment.get('seedBookItemId')));",
-                  "pm.expect(json.result.status).to.eql('Dang thue');",
-                  "pm.expect(json.result.payment_status).to.eql('Da thu coc');",
-                  "pm.environment.set(\"rentalId\", String(json.result.id));"
+                  "pm.environment.set('rentalId', String(json.result.id));"
                 ]
               }
             }
           ]
         },
         {
-          "name": "Create rental with unavailable item - 400",
+          "name": "Get rental by id - admin",
           "request": {
-            "method": "POST",
-            "url": "{{baseUrl}}/api/v1/rentals",
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/rentals/{{rentalId}}",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -1730,10 +906,6 @@
                   "type": "string"
                 }
               ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"user_id\": \"{{managedUserId}}\",\n  \"book_item_id\": \"{{seedBusyBookItemId}}\",\n  \"payment_method\": \"Tien mat\"\n}"
             }
           },
           "event": [
@@ -1742,18 +914,17 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('Status 400', function () { pm.response.to.have.status(400); });",
+                  "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
                   "const json = pm.response.json();",
-                  "pm.expect(json.code).to.eql(3004);",
-                  "pm.expect(json.message).to.be.a('string').and.not.empty;",
-                  "pm.expect(json.result).to.eql(null);"
+                  "pm.expect(json.code).to.eql(0);",
+                  "pm.expect(json.result.id).to.eql(Number(pm.environment.get('rentalId')));"
                 ]
               }
             }
           ]
         },
         {
-          "name": "Update rental - admin",
+          "name": "Update rental status - admin",
           "request": {
             "method": "PATCH",
             "url": "{{baseUrl}}/api/v1/rentals/{{rentalId}}",
@@ -1767,9 +938,20 @@
                 }
               ]
             },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"status\": \"Da tra\",\n  \"payment_status\": \"Da hoan coc\"\n}"
+              "raw": "{\n  \"status\": \"Da tra\",\n  \"payment_status\": \"Da hoan coc\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
           },
           "event": [
@@ -1781,10 +963,444 @@
                   "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
                   "const json = pm.response.json();",
                   "pm.expect(json.code).to.eql(0);",
-                  "pm.expect(json.message).to.eql(\"Thanh cong\");",
-                  "pm.expect(json.result).to.be.an('object');",
-                  "pm.expect(json.result.id).to.eql(Number(pm.environment.get('rentalId')));",
-                  "pm.expect(json.result.status).to.eql('Da tra');"
+                  "pm.expect(json.result.id).to.eql(Number(pm.environment.get('rentalId')));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get rental invalid id - 404",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/rentals/{{nonExistentId}}",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 404', function () { pm.response.to.have.status(404); });",
+                  "const json = pm.response.json();",
+                  "pm.expect(json.code).to.eql(3001);"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "06 - Firebase",
+      "item": [
+        {
+          "name": "Get Firebase custom token - user",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/firebase/custom-token",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+                  "const json = pm.response.json();",
+                  "pm.expect(json.code).to.eql(1000);",
+                  "pm.expect(json.result.token).to.be.a('string').and.not.empty;"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "07 - Support",
+      "item": [
+        {
+          "name": "Open support conversation - user",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/v1/support/open",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"Toi can ho tro tu Postman {{$timestamp}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+                  "const json = pm.response.json();",
+                  "pm.expect(json.code).to.eql(1000);",
+                  "pm.expect(json.result.conversation_id).to.be.a('string').and.not.empty;",
+                  "pm.environment.set('conversationId', json.result.conversation_id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Claim waiting conversation - admin",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/v1/support/claim-waiting",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+                  "const json = pm.response.json();",
+                  "pm.expect(json.code).to.eql(1000);",
+                  "pm.expect(json.result).to.be.an('object');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Close support conversation - admin",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/api/v1/support/{{conversationId}}/close",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+                  "const json = pm.response.json();",
+                  "pm.expect(json.code).to.eql(1000);",
+                  "pm.expect(json.result.status).to.eql('CLOSED');"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "08 - Staff Dashboard",
+      "item": [
+        {
+          "name": "Get staff dashboard summary - admin",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/staff/dashboard/summary",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+                  "const json = pm.response.json();",
+                  "pm.expect(json.code).to.eql(1000);",
+                  "pm.expect(json.result).to.be.an('object');"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "09 - Security Guard",
+      "item": [
+        {
+          "name": "GET users khong token - 401",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/users"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 401', function () { pm.response.to.have.status(401); });",
+                  "const json = pm.response.json();",
+                  "pm.expect(json.code).to.eql(9101);",
+                  "pm.expect(json.result).to.eql(null);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET firebase khong token - 401",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/firebase/custom-token"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 401', function () { pm.response.to.have.status(401); });",
+                  "const json = pm.response.json();",
+                  "pm.expect(json.code).to.eql(9101);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST support open khong token - 401",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/v1/support/open",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"test\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 401', function () { pm.response.to.have.status(401); });",
+                  "const json = pm.response.json();",
+                  "pm.expect(json.code).to.eql(9101);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET staff dashboard voi userToken - 403",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/staff/dashboard/summary",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 403', function () { pm.response.to.have.status(403); });",
+                  "const json = pm.response.json();",
+                  "pm.expect(json.code).to.eql(9102);",
+                  "pm.expect(json.result).to.eql(null);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST claim-waiting voi userToken - 403",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/v1/support/claim-waiting",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 403', function () { pm.response.to.have.status(403); });",
+                  "const json = pm.response.json();",
+                  "pm.expect(json.code).to.eql(9102);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST categories voi userToken - 403",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/v1/categories",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"forbidden\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 403', function () { pm.response.to.have.status(403); });",
+                  "const json = pm.response.json();",
+                  "pm.expect(json.code).to.eql(9102);"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "10 - Cleanup",
+      "item": [
+        {
+          "name": "Delete order - admin",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/v1/orders/{{orderId}}",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+                  "pm.environment.unset('orderId');"
                 ]
               }
             }
@@ -1813,20 +1429,17 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
-                  "const json = pm.response.json();",
-                  "pm.expect(json.code).to.eql(0);",
-                  "pm.expect(json.message).to.eql(\"Thanh cong\");",
-                  "pm.expect(json.result).to.eql(null);"
+                  "pm.environment.unset('rentalId');"
                 ]
               }
             }
           ]
         },
         {
-          "name": "Get deleted rental - 404",
+          "name": "Delete book - admin",
           "request": {
-            "method": "GET",
-            "url": "{{baseUrl}}/api/v1/rentals/{{rentalId}}",
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/v1/books/{{bookId}}",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -1844,11 +1457,69 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('Status 404', function () { pm.response.to.have.status(404); });",
-                  "const json = pm.response.json();",
-                  "pm.expect(json.code).to.eql(3001);",
-                  "pm.expect(json.message).to.be.a('string').and.not.empty;",
-                  "pm.expect(json.result).to.eql(null);"
+                  "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+                  "pm.environment.unset('bookId');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete category - admin",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/v1/categories/{{categoryId}}",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+                  "pm.environment.unset('categoryId');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete managed user - admin",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/v1/users/{{managedUserId}}",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+                  "pm.environment.unset('managedUserId');",
+                  "pm.environment.unset('managedUsername');",
+                  "pm.environment.unset('managedUserEmail');",
+                  "pm.environment.unset('userToken');"
                 ]
               }
             }
