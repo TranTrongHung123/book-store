@@ -9,7 +9,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import jakarta.persistence.Version;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
@@ -60,9 +59,6 @@ public class BookItem {
     @Column(name = "position", length = 100)
     private String position;
 
-    @Version
-    @Column(name = "version")
-    private Long version;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;

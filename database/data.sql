@@ -73,66 +73,66 @@ INSERT INTO `supplier` (`supplier_id`, `name`, `phone`, `address`) VALUES
 -- 6. PROMOTION
 -- =========================================================
 INSERT INTO `promotion`
-(`promotion_id`, `code`, `discount_percent`, `max_discount_amount`, `min_order_value`, `usage_limit`, `used_count`, `start_date`, `end_date`, `status`, `version`) VALUES
-(1, 'WELCOME10', 10.00, 50000, 100000, 100, 5, '2026-01-01 00:00:00', '2026-12-31 23:59:59', 1, 0),
-(2, 'BOOK20', 20.00, 80000, 200000, 50, 10, '2026-01-01 00:00:00', '2026-06-30 23:59:59', 1, 0),
-(3, 'SUMMER15', 15.00, 60000, 150000, 80, 12, '2026-04-01 00:00:00', '2026-08-31 23:59:59', 1, 0),
-(4, 'STUDENT5', 5.00, 20000, 50000, 200, 20, '2026-01-01 00:00:00', '2026-12-31 23:59:59', 1, 0),
-(5, 'VIP25', 25.00, 120000, 300000, 20, 3, '2026-01-01 00:00:00', '2026-12-31 23:59:59', 1, 0),
-(6, 'FREESHIP', 0.00, 30000, 100000, 150, 25, '2026-01-01 00:00:00', '2026-12-31 23:59:59', 1, 0),
-(7, 'NEWUSER', 12.00, 40000, 120000, 100, 8, '2026-01-01 00:00:00', '2026-12-31 23:59:59', 1, 0),
-(8, 'SALE30', 30.00, 150000, 500000, 10, 1, '2026-05-01 00:00:00', '2026-05-31 23:59:59', 1, 0),
-(9, 'WEEKEND7', 7.00, 25000, 80000, 100, 6, '2026-01-01 00:00:00', '2026-12-31 23:59:59', 1, 0),
-(10, 'OLDBOOK10', 10.00, 30000, 70000, 60, 4, '2026-01-01 00:00:00', '2026-12-31 23:59:59', 1, 0);
+(`promotion_id`, `code`, `discount_percent`, `max_discount_amount`, `min_order_value`, `usage_limit`, `used_count`, `start_date`, `end_date`, `status`) VALUES
+(1, 'WELCOME10', 10.00, 50000, 100000, 100, 5, '2026-01-01 00:00:00', '2026-12-31 23:59:59', 1),
+(2, 'BOOK20', 20.00, 80000, 200000, 50, 10, '2026-01-01 00:00:00', '2026-06-30 23:59:59', 1),
+(3, 'SUMMER15', 15.00, 60000, 150000, 80, 12, '2026-04-01 00:00:00', '2026-08-31 23:59:59', 1),
+(4, 'STUDENT5', 5.00, 20000, 50000, 200, 20, '2026-01-01 00:00:00', '2026-12-31 23:59:59', 1),
+(5, 'VIP25', 25.00, 120000, 300000, 20, 3, '2026-01-01 00:00:00', '2026-12-31 23:59:59', 1),
+(6, 'FREESHIP', 0.00, 30000, 100000, 150, 25, '2026-01-01 00:00:00', '2026-12-31 23:59:59', 1),
+(7, 'NEWUSER', 12.00, 40000, 120000, 100, 8, '2026-01-01 00:00:00', '2026-12-31 23:59:59', 1),
+(8, 'SALE30', 30.00, 150000, 500000, 10, 1, '2026-05-01 00:00:00', '2026-05-31 23:59:59', 1),
+(9, 'WEEKEND7', 7.00, 25000, 80000, 100, 6, '2026-01-01 00:00:00', '2026-12-31 23:59:59', 1),
+(10, 'OLDBOOK10', 10.00, 30000, 70000, 60, 4, '2026-01-01 00:00:00', '2026-12-31 23:59:59', 1);
 
 -- =========================================================
 -- 7. USER
 -- role_id: 1=ADMIN, 2=MANAGER, 3=USER
 -- =========================================================
 INSERT INTO `user`
-(`user_id`, `role_id`, `username`, `password`, `email`, `phone`, `address`, `full_name`, `total_points`, `status`, `version`) VALUES
-(1, 1, 'admin01', '$2a$10$adminhash01', 'admin01@bookstore.vn', '0901000001', 'Hà Nội', 'Quản trị viên 01', 0, 1, 0),
-(2, 2, 'manager01', '$2a$10$managerhash01', 'manager01@bookstore.vn', '0901000002', 'Hà Nội', 'Quản lý 01', 0, 1, 0),
-(3, 2, 'manager02', '$2a$10$managerhash02', 'manager02@bookstore.vn', '0901000003', 'TP. Hồ Chí Minh', 'Quản lý 02', 0, 1, 0),
-(4, 3, 'nguyenvana', '$2a$10$userhash01', 'vana@gmail.com', '0901000004', 'Cầu Giấy, Hà Nội', 'Nguyễn Văn A', 120, 1, 0),
-(5, 3, 'tranthib', '$2a$10$userhash02', 'thib@gmail.com', '0901000005', 'Hai Bà Trưng, Hà Nội', 'Trần Thị B', 80, 1, 0),
-(6, 3, 'leminhc', '$2a$10$userhash03', 'minhc@gmail.com', '0901000006', 'Đống Đa, Hà Nội', 'Lê Minh C', 40, 1, 0),
-(7, 3, 'phamthud', '$2a$10$userhash04', 'thud@gmail.com', '0901000007', 'Thanh Xuân, Hà Nội', 'Phạm Thu D', 200, 1, 0),
-(8, 3, 'hoange', '$2a$10$userhash05', 'hoange@gmail.com', '0901000008', 'Long Biên, Hà Nội', 'Hoàng E', 60, 1, 0),
-(9, 3, 'buiducthanh', '$2a$10$userhash06', 'thanh@gmail.com', '0901000009', 'Nam Từ Liêm, Hà Nội', 'Bùi Đức Thành', 95, 1, 0),
-(10, 3, 'dodiepchi', '$2a$10$userhash07', 'diepchi@gmail.com', '0901000010', 'Hà Đông, Hà Nội', 'Đỗ Diệp Chi', 30, 1, 0);
+(`user_id`, `role_id`, `username`, `password`, `email`, `phone`, `address`, `full_name`, `total_points`, `status`) VALUES
+(1, 1, 'admin01', '$2a$10$adminhash01', 'admin01@bookstore.vn', '0901000001', 'Hà Nội', 'Quản trị viên 01', 0, 1),
+(2, 2, 'manager01', '$2a$10$managerhash01', 'manager01@bookstore.vn', '0901000002', 'Hà Nội', 'Quản lý 01', 0, 1),
+(3, 2, 'manager02', '$2a$10$managerhash02', 'manager02@bookstore.vn', '0901000003', 'TP. Hồ Chí Minh', 'Quản lý 02', 0, 1),
+(4, 3, 'nguyenvana', '$2a$10$userhash01', 'vana@gmail.com', '0901000004', 'Cầu Giấy, Hà Nội', 'Nguyễn Văn A', 120, 1),
+(5, 3, 'tranthib', '$2a$10$userhash02', 'thib@gmail.com', '0901000005', 'Hai Bà Trưng, Hà Nội', 'Trần Thị B', 80, 1),
+(6, 3, 'leminhc', '$2a$10$userhash03', 'minhc@gmail.com', '0901000006', 'Đống Đa, Hà Nội', 'Lê Minh C', 40, 1),
+(7, 3, 'phamthud', '$2a$10$userhash04', 'thud@gmail.com', '0901000007', 'Thanh Xuân, Hà Nội', 'Phạm Thu D', 200, 1),
+(8, 3, 'hoange', '$2a$10$userhash05', 'hoange@gmail.com', '0901000008', 'Long Biên, Hà Nội', 'Hoàng E', 60, 1),
+(9, 3, 'buiducthanh', '$2a$10$userhash06', 'thanh@gmail.com', '0901000009', 'Nam Từ Liêm, Hà Nội', 'Bùi Đức Thành', 95, 1),
+(10, 3, 'dodiepchi', '$2a$10$userhash07', 'diepchi@gmail.com', '0901000010', 'Hà Đông, Hà Nội', 'Đỗ Diệp Chi', 30, 1);
 
 -- =========================================================
 -- 8. BOOK
 -- =========================================================
 INSERT INTO `book`
-(`book_id`, `publisher_id`, `title`, `publication_year`, `language`, `original_price`, `selling_price`, `total_stock`, `description`, `cover_image`, `status`, `version`) VALUES
-(1, 1, 'Cho Tôi Xin Một Vé Đi Tuổi Thơ', 2018, 'Tiếng Việt', 55000, 78000, 20, 'Tác phẩm nổi tiếng của Nguyễn Nhật Ánh.', 'covers/book1.jpg', 1, 0),
-(2, 3, 'Đắc Nhân Tâm', 2020, 'Tiếng Việt', 60000, 90000, 25, 'Sách kỹ năng giao tiếp kinh điển.', 'covers/book2.jpg', 1, 0),
-(3, 3, 'Cha Giàu Cha Nghèo', 2021, 'Tiếng Việt', 65000, 98000, 18, 'Sách tài chính cá nhân nổi tiếng.', 'covers/book3.jpg', 1, 0),
-(4, 6, 'Harry Potter Và Hòn Đá Phù Thủy', 2019, 'Tiếng Việt', 90000, 135000, 15, 'Phần đầu bộ Harry Potter.', 'covers/book4.jpg', 1, 0),
-(5, 2, 'Dế Mèn Phiêu Lưu Ký', 2017, 'Tiếng Việt', 45000, 68000, 30, 'Tác phẩm thiếu nhi kinh điển.', 'covers/book5.jpg', 1, 0),
-(6, 4, 'Refactoring', 2022, 'Tiếng Anh', 250000, 320000, 10, 'Cải tiến cấu trúc mã nguồn.', 'covers/book6.jpg', 1, 0),
-(7, 4, 'Effective Java', 2022, 'Tiếng Anh', 280000, 350000, 12, 'Các thực hành tốt nhất trong Java.', 'covers/book7.jpg', 1, 0),
-(8, 8, 'Làm Chủ Tư Duy Thay Đổi Vận Mệnh', 2021, 'Tiếng Việt', 70000, 105000, 14, 'Sách phát triển bản thân.', 'covers/book8.jpg', 1, 0),
-(9, 9, 'Marketing 4.0', 2023, 'Tiếng Việt', 95000, 145000, 16, 'Xu hướng marketing thời đại số.', 'covers/book9.jpg', 1, 0),
-(10, 5, 'Chí Phèo', 2016, 'Tiếng Việt', 35000, 52000, 22, 'Tác phẩm hiện thực nổi tiếng.', 'covers/book10.jpg', 1, 0);
+(`book_id`, `publisher_id`, `title`, `publication_year`, `language`, `original_price`, `selling_price`, `total_stock`, `description`, `cover_image`, `status`) VALUES
+(1, 1, 'Cho Tôi Xin Một Vé Đi Tuổi Thơ', 2018, 'Tiếng Việt', 55000, 78000, 20, 'Tác phẩm nổi tiếng của Nguyễn Nhật Ánh.', 'covers/book1.jpg', 1),
+(2, 3, 'Đắc Nhân Tâm', 2020, 'Tiếng Việt', 60000, 90000, 25, 'Sách kỹ năng giao tiếp kinh điển.', 'covers/book2.jpg', 1),
+(3, 3, 'Cha Giàu Cha Nghèo', 2021, 'Tiếng Việt', 65000, 98000, 18, 'Sách tài chính cá nhân nổi tiếng.', 'covers/book3.jpg', 1),
+(4, 6, 'Harry Potter Và Hòn Đá Phù Thủy', 2019, 'Tiếng Việt', 90000, 135000, 15, 'Phần đầu bộ Harry Potter.', 'covers/book4.jpg', 1),
+(5, 2, 'Dế Mèn Phiêu Lưu Ký', 2017, 'Tiếng Việt', 45000, 68000, 30, 'Tác phẩm thiếu nhi kinh điển.', 'covers/book5.jpg', 1),
+(6, 4, 'Refactoring', 2022, 'Tiếng Anh', 250000, 320000, 10, 'Cải tiến cấu trúc mã nguồn.', 'covers/book6.jpg', 1),
+(7, 4, 'Effective Java', 2022, 'Tiếng Anh', 280000, 350000, 12, 'Các thực hành tốt nhất trong Java.', 'covers/book7.jpg', 1),
+(8, 8, 'Làm Chủ Tư Duy Thay Đổi Vận Mệnh', 2021, 'Tiếng Việt', 70000, 105000, 14, 'Sách phát triển bản thân.', 'covers/book8.jpg', 1),
+(9, 9, 'Marketing 4.0', 2023, 'Tiếng Việt', 95000, 145000, 16, 'Xu hướng marketing thời đại số.', 'covers/book9.jpg', 1),
+(10, 5, 'Chí Phèo', 2016, 'Tiếng Việt', 35000, 52000, 22, 'Tác phẩm hiện thực nổi tiếng.', 'covers/book10.jpg', 1);
 
 -- =========================================================
 -- 9. BOOK_ITEM
 -- =========================================================
 INSERT INTO `book_item`
-(`book_item_id`, `book_id`, `barcode`, `condition_type`, `condition_note`, `deposit_amount`, `current_rental_price`, `is_for_rent`, `status`, `position`, `version`) VALUES
-(1, 1, 'BC0001', 'Mới', 'Sách mới 100%', 30000, 10000, 1, 'Sẵn sàng', 'Kệ A1', 0),
-(2, 2, 'BC0002', 'Mới', 'Sách mới 100%', 35000, 12000, 1, 'Sẵn sàng', 'Kệ A2', 0),
-(3, 3, 'BC0003', 'Cũ', 'Bìa hơi cũ', 25000, 9000, 1, 'Sẵn sàng', 'Kệ A3', 0),
-(4, 4, 'BC0004', 'Mới', 'Nguyên seal', 50000, 15000, 1, 'Đang thuê', 'Kệ B1', 0),
-(5, 5, 'BC0005', 'Cũ', 'Ố vàng nhẹ', 20000, 8000, 1, 'Sẵn sàng', 'Kệ B2', 0),
-(6, 6, 'BC0006', 'Mới', 'Sách nhập mới', 80000, 25000, 1, 'Sẵn sàng', 'Kệ C1', 0),
-(7, 7, 'BC0007', 'Mới', 'Sách nhập mới', 90000, 30000, 1, 'Sẵn sàng', 'Kệ C2', 0),
-(8, 8, 'BC0008', 'Cũ', 'Có vài nếp gấp', 30000, 10000, 1, 'Đã bán', 'Kệ D1', 0),
-(9, 9, 'BC0009', 'Mới', 'Nguyên seal', 45000, 14000, 1, 'Sẵn sàng', 'Kệ D2', 0),
-(10, 10, 'BC0010', 'Cũ', 'Cũ nhẹ', 15000, 7000, 1, 'Mất', 'Kệ D3', 0);
+(`book_item_id`, `book_id`, `barcode`, `condition_type`, `condition_note`, `deposit_amount`, `current_rental_price`, `is_for_rent`, `status`, `position`) VALUES
+(1, 1, 'BC0001', 'Mới', 'Sách mới 100%', 30000, 10000, 1, 'Sẵn sàng', 'Kệ A1'),
+(2, 2, 'BC0002', 'Mới', 'Sách mới 100%', 35000, 12000, 1, 'Sẵn sàng', 'Kệ A2'),
+(3, 3, 'BC0003', 'Cũ', 'Bìa hơi cũ', 25000, 9000, 1, 'Sẵn sàng', 'Kệ A3'),
+(4, 4, 'BC0004', 'Mới', 'Nguyên seal', 50000, 15000, 1, 'Đang thuê', 'Kệ B1'),
+(5, 5, 'BC0005', 'Cũ', 'Ố vàng nhẹ', 20000, 8000, 1, 'Sẵn sàng', 'Kệ B2'),
+(6, 6, 'BC0006', 'Mới', 'Sách nhập mới', 80000, 25000, 1, 'Sẵn sàng', 'Kệ C1'),
+(7, 7, 'BC0007', 'Mới', 'Sách nhập mới', 90000, 30000, 1, 'Sẵn sàng', 'Kệ C2'),
+(8, 8, 'BC0008', 'Cũ', 'Có vài nếp gấp', 30000, 10000, 1, 'Đã bán', 'Kệ D1'),
+(9, 9, 'BC0009', 'Mới', 'Nguyên seal', 45000, 14000, 1, 'Sẵn sàng', 'Kệ D2'),
+(10, 10, 'BC0010', 'Cũ', 'Cũ nhẹ', 15000, 7000, 1, 'Mất', 'Kệ D3');
 
 -- =========================================================
 -- 10. BOOK_AUTHOR

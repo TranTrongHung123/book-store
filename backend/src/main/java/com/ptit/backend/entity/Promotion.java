@@ -6,7 +6,6 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import jakarta.persistence.Version;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
@@ -58,9 +57,6 @@ public class Promotion {
     @Column(name = "status")
     private Integer status;
 
-    @Version
-    @Column(name = "version")
-    private Long version;
 
     @Column(name = "created_at", updatable = false)
     @CreationTimestamp

@@ -13,7 +13,6 @@ public interface BookItemMapper {
 
     @Mapping(target = "bookItemId", ignore = true)
     @Mapping(target = "book", source = "bookId")
-    @Mapping(target = "version", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     BookItem toEntity(BookItemRequest request);

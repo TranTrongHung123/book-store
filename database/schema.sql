@@ -3,6 +3,7 @@ CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 USE db_bookstore;
 
+-- 1. PHÂN QUYỀN & NGƯỜI DÙNG
 CREATE TABLE `role` (
     `role_id` BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT 'Mã định danh vai trò',
     `role_name` VARCHAR(50) NOT NULL COMMENT 'Tên vai trò',
@@ -11,6 +12,23 @@ CREATE TABLE `role` (
     `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Thời gian cập nhật cuối'
 ) COMMENT='Bảng lưu trữ vai trò người dùng';
 
+CREATE TABLE `user` (
+    `user_id` BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT 'Mã định danh duy nhất của người dùng',
+    `role_id` BIGINT NOT NULL COMMENT 'Liên kết với vai trò trong bảng role',
+    `username` VARCHAR(50) NOT NULL UNIQUE COMMENT 'Tên đăng nhập duy nhất',
+    `password` VARCHAR(255) NOT NULL COMMENT 'Mật khẩu mã hóa bảo mật',
+    `email` VARCHAR(100) COMMENT 'Địa chỉ email',
+    `phone` VARCHAR(20) COMMENT 'Số điện thoại để liên hệ giao nhận hàng',
+    `address` VARCHAR(255) COMMENT 'Địa chỉ mặc định lưu trong hồ sơ',
+    `full_name` VARCHAR(100) COMMENT 'Họ và tên đầy đủ của khách hàng',
+    `total_points` INT DEFAULT 0 COMMENT 'Tổng số điểm tích lũy hiện có của khách' CHECK (`total_points` >= 0),
+    `status` TINYINT DEFAULT 1 COMMENT 'Trạng thái tài khoản (1: Hoạt động, 0: Bị khóa)',
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT 'Thời gian đăng ký tài khoản',
+    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Thời gian cập nhật hồ sơ',
+    FOREIGN KEY (`role_id`) REFERENCES `role`(`role_id`)
+) COMMENT='Bảng thông tin người dùng';
+
+-- 2. DANH MỤC & ĐỐI TÁC
 CREATE TABLE `category` (
     `category_id` BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT 'Mã định danh thể loại sách',
     `parent_id` BIGINT NULL COMMENT 'Danh mục cha (nếu có)',
@@ -47,39 +65,7 @@ CREATE TABLE `supplier` (
     `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Thời gian cập nhật cuối'
 ) COMMENT='Bảng thông tin nhà cung cấp';
 
-CREATE TABLE `promotion` (
-    `promotion_id` BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT 'Mã định danh chương trình',
-    `code` VARCHAR(50) NOT NULL UNIQUE COMMENT 'Mã giảm giá khách nhập',
-    `discount_percent` DECIMAL(5,2) COMMENT 'Phần trăm giảm giá trên đơn hàng' CHECK (`discount_percent` >= 0 AND `discount_percent` <= 100),
-    `max_discount_amount` DECIMAL(15,2) COMMENT 'Số tiền giảm tối đa cho phép' CHECK (`max_discount_amount` >= 0),
-    `min_order_value` DECIMAL(15,2) COMMENT 'Giá trị đơn hàng tối thiểu để áp dụng' CHECK (`min_order_value` >= 0),
-    `usage_limit` INT NULL COMMENT 'Giới hạn tổng số lượt sử dụng mã' CHECK (`usage_limit` > 0),
-    `used_count` INT DEFAULT 0 COMMENT 'Số lượt mã đã được khách hàng sử dụng thực tế' CHECK (`used_count` >= 0),
-    `start_date` DATETIME COMMENT 'Ngày bắt đầu có hiệu lực',
-    `end_date` DATETIME COMMENT 'Ngày kết thúc chương trình',
-    `status` TINYINT DEFAULT 1 COMMENT 'Trạng thái (1: Kích hoạt, 0: Khóa)',
-    `version` BIGINT DEFAULT 0 COMMENT 'Phục vụ Optimistic Locking chặn tranh chấp khi dùng mã',
-    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT 'Thời gian tạo',
-    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Thời gian cập nhật cuối'
-) COMMENT='Bảng chương trình khuyến mãi';
-
-CREATE TABLE `user` (
-    `user_id` BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT 'Mã định danh duy nhất của người dùng',
-    `role_id` BIGINT NOT NULL COMMENT 'Liên kết với vai trò trong bảng role',
-    `username` VARCHAR(50) NOT NULL UNIQUE COMMENT 'Tên đăng nhập duy nhất',
-    `password` VARCHAR(255) NOT NULL COMMENT 'Mật khẩu mã hóa bảo mật',
-    `email` VARCHAR(100) COMMENT 'Địa chỉ email',
-    `phone` VARCHAR(20) COMMENT 'Số điện thoại để liên hệ giao nhận hàng',
-    `address` VARCHAR(255) COMMENT 'Địa chỉ mặc định lưu trong hồ sơ',
-    `full_name` VARCHAR(100) COMMENT 'Họ và tên đầy đủ của khách hàng',
-    `total_points` INT DEFAULT 0 COMMENT 'Tổng số điểm tích lũy hiện có của khách' CHECK (`total_points` >= 0),
-    `status` TINYINT DEFAULT 1 COMMENT 'Trạng thái tài khoản (1: Hoạt động, 0: Bị khóa)',
-    `version` BIGINT DEFAULT 0 COMMENT 'Phục vụ Optimistic Locking khi cộng/trừ điểm',
-    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT 'Thời gian đăng ký tài khoản',
-    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Thời gian cập nhật hồ sơ',
-    FOREIGN KEY (`role_id`) REFERENCES `role`(`role_id`)
-) COMMENT='Bảng thông tin người dùng';
-
+-- 3. THÔNG TIN SÁCH & VẬT PHẨM
 CREATE TABLE `book` (
     `book_id` BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT 'Mã định danh của đầu sách',
     `publisher_id` BIGINT COMMENT 'Khóa ngoại tham chiếu đến nhà xuất bản',
@@ -92,7 +78,6 @@ CREATE TABLE `book` (
     `description` TEXT COMMENT 'Nội dung tóm tắt của cuốn sách',
     `cover_image` VARCHAR(255) COMMENT 'Đường dẫn lưu trữ ảnh bìa sách',
     `status` TINYINT DEFAULT 1 COMMENT 'Trạng thái kinh doanh (1: Đang bán, 0: Ngừng bán)',
-    `version` BIGINT DEFAULT 0 COMMENT 'Phục vụ Optimistic Locking khi trừ tồn kho',
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT 'Thời gian tạo',
     `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Thời gian cập nhật cuối',
     FOREIGN KEY (`publisher_id`) REFERENCES `publisher`(`publisher_id`)
@@ -109,7 +94,6 @@ CREATE TABLE `book_item` (
     `is_for_rent` TINYINT DEFAULT 0 COMMENT 'Mục đích (1: Để cho thuê, 0: Để bán mới)',
     `status` VARCHAR(50) COMMENT 'Trạng thái vật lý (Sẵn sàng, Đang thuê, Đã bán, Mất)',
     `position` VARCHAR(100) COMMENT 'Vị trí chính xác trong kho',
-    `version` BIGINT DEFAULT 0 COMMENT 'Phục vụ Optimistic Locking khi thuê/bán',
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT 'Thời gian tạo',
     `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Thời gian cập nhật cuối',
     FOREIGN KEY (`book_id`) REFERENCES `book`(`book_id`)
@@ -133,6 +117,45 @@ CREATE TABLE `book_category` (
     FOREIGN KEY (`category_id`) REFERENCES `category`(`category_id`)
 ) COMMENT='Bảng trung gian liên kết Sách và Thể loại';
 
+-- 4. HỆ THỐNG FLASH SALE
+CREATE TABLE `flash_sale_campaign` (
+    `campaign_id` BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT 'Mã định danh đợt sale',
+    `name` VARCHAR(150) NOT NULL COMMENT 'Tên đợt sale',
+    `start_time` DATETIME NOT NULL COMMENT 'Thời gian bắt đầu',
+    `end_time` DATETIME NOT NULL COMMENT 'Thời gian kết thúc',
+    `status` VARCHAR(20) DEFAULT 'UPCOMING' COMMENT 'Trạng thái (Upcoming, Active, Ended)',
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) COMMENT='Bảng chiến dịch Flash Sale';
+
+CREATE TABLE `flash_sale_item` (
+    `flash_sale_item_id` BIGINT AUTO_INCREMENT PRIMARY KEY,
+    `campaign_id` BIGINT NOT NULL COMMENT 'Nối với Campaign',
+    `book_id` BIGINT NOT NULL COMMENT 'Nối với Book',
+    `flash_sale_price` DECIMAL(15,2) NOT NULL COMMENT 'Giá sale',
+    `quantity` INT NOT NULL COMMENT 'Tổng số lượng đem ra sale',
+    `sold_quantity` INT DEFAULT 0 COMMENT 'Số lượng đã bán',
+    `max_per_user` INT DEFAULT 1 COMMENT 'Giới hạn mua mỗi người',
+    FOREIGN KEY (`campaign_id`) REFERENCES `flash_sale_campaign`(`campaign_id`),
+    FOREIGN KEY (`book_id`) REFERENCES `book`(`book_id`)
+) COMMENT='Bảng chi tiết hàng Flash Sale';
+
+-- 5. GIỎ HÀNG & KHUYẾN MÃI
+CREATE TABLE `promotion` (
+    `promotion_id` BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT 'Mã định danh chương trình',
+    `code` VARCHAR(50) NOT NULL UNIQUE COMMENT 'Mã giảm giá khách nhập',
+    `discount_percent` DECIMAL(5,2) COMMENT 'Phần trăm giảm giá trên đơn hàng' CHECK (`discount_percent` >= 0 AND `discount_percent` <= 100),
+    `max_discount_amount` DECIMAL(15,2) COMMENT 'Số tiền giảm tối đa cho phép' CHECK (`max_discount_amount` >= 0),
+    `min_order_value` DECIMAL(15,2) COMMENT 'Giá trị đơn hàng tối thiểu để áp dụng' CHECK (`min_order_value` >= 0),
+    `usage_limit` INT NULL COMMENT 'Giới hạn tổng số lượt sử dụng mã' CHECK (`usage_limit` > 0),
+    `used_count` INT DEFAULT 0 COMMENT 'Số lượt mã đã được khách hàng sử dụng thực tế' CHECK (`used_count` >= 0),
+    `start_date` DATETIME COMMENT 'Ngày bắt đầu có hiệu lực',
+    `end_date` DATETIME COMMENT 'Ngày kết thúc chương trình',
+    `status` TINYINT DEFAULT 1 COMMENT 'Trạng thái (1: Kích hoạt, 0: Khóa)',
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT 'Thời gian tạo',
+    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Thời gian cập nhật cuối'
+) COMMENT='Bảng chương trình khuyến mãi';
+
 CREATE TABLE `cart` (
     `cart_id` BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT 'Mã định danh giỏ hàng',
     `user_id` BIGINT NOT NULL UNIQUE COMMENT 'Mỗi user có 1 giỏ hàng duy nhất',
@@ -152,6 +175,7 @@ CREATE TABLE `cart_item` (
     FOREIGN KEY (`book_id`) REFERENCES `book`(`book_id`)
 ) COMMENT='Bảng chi tiết các sách trong giỏ hàng';
 
+-- 6. ĐƠN HÀNG & CHI TIẾT ĐƠN HÀNG
 CREATE TABLE `orders` (
     `order_id` BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT 'Mã định danh đơn hàng',
     `user_id` BIGINT NOT NULL COMMENT 'Người thực hiện mua hàng',
@@ -170,6 +194,19 @@ CREATE TABLE `orders` (
     FOREIGN KEY (`promotion_id`) REFERENCES `promotion`(`promotion_id`)
 ) COMMENT='Bảng quản lý đơn hàng bán sách';
 
+CREATE TABLE `order_detail` (
+    `order_detail_id` BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT 'Mã định danh dòng chi tiết',
+    `order_id` BIGINT NOT NULL COMMENT 'Liên kết với đơn hàng tổng',
+    `book_id` BIGINT NOT NULL COMMENT 'Đầu sách khách mua',
+    `flash_sale_item_id` BIGINT NULL COMMENT 'Liên kết nếu mua trong đợt sale',
+    `quantity` INT NOT NULL COMMENT 'Số lượng khách mua' CHECK (`quantity` > 0),
+    `unit_price` DECIMAL(15,2) COMMENT 'Giá bán tại thời điểm mua' CHECK (`unit_price` >= 0),
+    FOREIGN KEY (`order_id`) REFERENCES `orders`(`order_id`),
+    FOREIGN KEY (`book_id`) REFERENCES `book`(`book_id`),
+    FOREIGN KEY (`flash_sale_item_id`) REFERENCES `flash_sale_item`(`flash_sale_item_id`)
+) COMMENT='Bảng chi tiết đơn bán';
+
+-- 7. QUẢN LÝ THUÊ SÁCH
 CREATE TABLE `rental` (
     `rental_id` BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT 'Mã định danh hợp đồng thuê',
     `user_id` BIGINT NOT NULL COMMENT 'Người thực hiện thuê sách',
@@ -189,6 +226,7 @@ CREATE TABLE `rental` (
     FOREIGN KEY (`book_item_id`) REFERENCES `book_item`(`book_item_id`)
 ) COMMENT='Bảng quản lý hợp đồng thuê sách';
 
+-- 8. NHẬP HÀNG & KHO VẬT LÝ
 CREATE TABLE `book_import` (
     `import_id` BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT 'Mã định danh phiếu nhập hàng',
     `supplier_id` BIGINT NOT NULL COMMENT 'Nhập từ nhà cung cấp nào',
@@ -201,16 +239,6 @@ CREATE TABLE `book_import` (
     FOREIGN KEY (`user_id`) REFERENCES `user`(`user_id`)
 ) COMMENT='Bảng phiếu nhập kho';
 
-CREATE TABLE `order_detail` (
-    `order_detail_id` BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT 'Mã định danh dòng chi tiết',
-    `order_id` BIGINT NOT NULL COMMENT 'Liên kết với đơn hàng tổng',
-    `book_id` BIGINT NOT NULL COMMENT 'Đầu sách khách mua',
-    `quantity` INT NOT NULL COMMENT 'Số lượng khách mua' CHECK (`quantity` > 0),
-    `unit_price` DECIMAL(15,2) COMMENT 'Giá bán tại thời điểm mua' CHECK (`unit_price` >= 0),
-    FOREIGN KEY (`order_id`) REFERENCES `orders`(`order_id`),
-    FOREIGN KEY (`book_id`) REFERENCES `book`(`book_id`)
-) COMMENT='Bảng chi tiết đơn bán';
-
 CREATE TABLE `import_detail` (
     `import_detail_id` BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT 'Mã định danh dòng chi tiết nhập',
     `import_id` BIGINT NOT NULL COMMENT 'Liên kết với phiếu nhập tổng',
@@ -220,19 +248,6 @@ CREATE TABLE `import_detail` (
     FOREIGN KEY (`import_id`) REFERENCES `book_import`(`import_id`),
     FOREIGN KEY (`book_id`) REFERENCES `book`(`book_id`)
 ) COMMENT='Bảng chi tiết phiếu nhập';
-
-CREATE TABLE `point_transaction` (
-    `transaction_id` BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT 'Mã định danh giao dịch điểm',
-    `user_id` BIGINT NOT NULL COMMENT 'Khách hàng nhận hoặc mất điểm',
-    `order_id` BIGINT NULL COMMENT 'Liên kết đơn bán sinh ra điểm',
-    `rental_id` BIGINT NULL COMMENT 'Liên kết đơn thuê sinh ra điểm',
-    `points_changed` INT NOT NULL COMMENT 'Số điểm thay đổi (Cộng thêm hoặc Trừ đi)',
-    `reason` VARCHAR(255) COMMENT 'Lý do (Mua hàng, Thưởng trả đúng hạn, Phạt hỏng...)',
-    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT 'Thời gian tạo',
-    FOREIGN KEY (`user_id`) REFERENCES `user`(`user_id`),
-    FOREIGN KEY (`order_id`) REFERENCES `orders`(`order_id`),
-    FOREIGN KEY (`rental_id`) REFERENCES `rental`(`rental_id`)
-) COMMENT='Bảng lịch sử biến động điểm tích lũy';
 
 CREATE TABLE `inventory_log` (
     `log_id` BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT 'Mã định danh dòng nhật ký',
@@ -250,6 +265,20 @@ CREATE TABLE `inventory_log` (
     FOREIGN KEY (`reference_import_id`) REFERENCES `book_import`(`import_id`),
     FOREIGN KEY (`reference_rental_id`) REFERENCES `rental`(`rental_id`)
 ) COMMENT='Bảng nhật ký kho vật lý';
+
+-- 9. LỊCH SỬ ĐIỂM, ĐÁNH GIÁ & THANH TOÁN
+CREATE TABLE `point_transaction` (
+    `transaction_id` BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT 'Mã định danh giao dịch điểm',
+    `user_id` BIGINT NOT NULL COMMENT 'Khách hàng nhận hoặc mất điểm',
+    `order_id` BIGINT NULL COMMENT 'Liên kết đơn bán sinh ra điểm',
+    `rental_id` BIGINT NULL COMMENT 'Liên kết đơn thuê sinh ra điểm',
+    `points_changed` INT NOT NULL COMMENT 'Số điểm thay đổi (Cộng thêm hoặc Trừ đi)',
+    `reason` VARCHAR(255) COMMENT 'Lý do (Mua hàng, Thưởng trả đúng hạn, Phạt hỏng...)',
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT 'Thời gian tạo',
+    FOREIGN KEY (`user_id`) REFERENCES `user`(`user_id`),
+    FOREIGN KEY (`order_id`) REFERENCES `orders`(`order_id`),
+    FOREIGN KEY (`rental_id`) REFERENCES `rental`(`rental_id`)
+) COMMENT='Bảng lịch sử biến động điểm tích lũy';
 
 CREATE TABLE `review` (
     `review_id` BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT 'Mã định danh đánh giá',
@@ -277,6 +306,7 @@ CREATE TABLE `payment_transaction` (
     FOREIGN KEY (`order_id`) REFERENCES `orders`(`order_id`)
 ) COMMENT='Bảng lưu trữ lịch sử gọi API thanh toán';
 
+-- 10. HỆ THỐNG CHATBOT
 CREATE TABLE `chat_session` (
     `session_id` BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT 'Mã định danh phiên chat',
     `user_id` BIGINT NULL COMMENT 'Khách hàng (NULL nếu khách hàng chưa đăng nhập)',
@@ -295,19 +325,15 @@ CREATE TABLE `chat_message` (
     FOREIGN KEY (`session_id`) REFERENCES `chat_session`(`session_id`)
 ) COMMENT='Bảng lưu chi tiết từng tin nhắn của Chatbot để cung cấp ngữ cảnh cho AI';
 
+-- 11. CHỈ MỤC TỐI ƯU HÓA TRUY VẤN
 CREATE INDEX idx_user_email ON `user`(`email`);
 CREATE INDEX idx_user_phone ON `user`(`phone`);
-
 CREATE INDEX idx_book_title ON `book`(`title`);
 CREATE INDEX idx_book_created_at ON `book`(`created_at` DESC);
-
 CREATE INDEX idx_orders_status ON `orders`(`order_status`, `payment_status`);
 CREATE INDEX idx_orders_created_at ON `orders`(`created_at` DESC);
-
 CREATE INDEX idx_payment_provider_txn ON `payment_transaction`(`provider_transaction_id`);
-
 CREATE INDEX idx_promotion_validity ON `promotion`(`status`, `start_date`, `end_date`);
-
 CREATE INDEX idx_chat_session_active ON `chat_session`(`user_id`, `status`);
-
 CREATE INDEX idx_inventory_action ON `inventory_log`(`action_type`);
+CREATE INDEX idx_flash_sale_status ON `flash_sale_campaign`(`status`, `start_time`, `end_time`);

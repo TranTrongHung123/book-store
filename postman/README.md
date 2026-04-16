@@ -1,64 +1,28 @@
-# Bộ Test Postman
+# Bộ test Postman cho backend Bookstore
 
-## Tệp sử dụng
-- `docs/postman/bookstore-api.postman_collection.json`
-- `docs/postman/bookstore-local.postman_environment.json`
-- `database/seed_auth_users.sql`
+## Thứ tự import
+1. `postman/bookstore-local.postman_environment.json`
+2. `postman/bookstore-api.postman_collection.json`
 
-## Phạm vi URL đã có trong collection
-- Auth:
-  - `POST /api/v1/auth/register`
-  - `POST /api/v1/auth/login`
-- Users:
-  - `GET /api/v1/users`
-  - `GET /api/v1/users/{id}`
-  - `PATCH /api/v1/users/{id}`
-  - `DELETE /api/v1/users/{id}`
-- Categories:
-  - `GET /api/v1/categories`
-  - `GET /api/v1/categories/{id}`
-  - `POST /api/v1/categories`
-  - `PATCH /api/v1/categories/{id}`
-  - `DELETE /api/v1/categories/{id}`
-- Books:
-  - `GET /api/v1/books`
-  - `GET /api/v1/books/{id}`
-  - `POST /api/v1/books`
-  - `PATCH /api/v1/books/{id}`
-  - `DELETE /api/v1/books/{id}`
-- Orders:
-  - `GET /api/v1/orders`
-  - `GET /api/v1/orders/{id}`
-  - `POST /api/v1/orders`
-  - `PATCH /api/v1/orders/{id}`
-  - `DELETE /api/v1/orders/{id}`
-- Rentals:
-  - `GET /api/v1/rentals`
-  - `GET /api/v1/rentals/{id}`
-  - `POST /api/v1/rentals`
-  - `PATCH /api/v1/rentals/{id}`
-  - `DELETE /api/v1/rentals/{id}`
+## Thứ tự chạy khuyến nghị
+1. `00 - Auth`
+2. `01 - Security Guard`
+3. `02 - Users`
+4. `03 - Categories`
+5. `04 - Books`
+6. `05 - Orders`
+7. `06 - Rentals`
 
-## Quy trình chạy
-1. Chạy script seed: `database/seed_auth_users.sql`
-2. Import collection và environment `bookstore-local.postman_environment.json`
-3. Chạy theo đúng thứ tự folder:
-   1. `00 - Auth`
-   2. `01 - Security Guard`
-   3. `02 - Categories Workflow (Admin)`
-   4. `03 - Books Workflow`
-      5. `04 - Users Workflow (Quản lý)`
-   6. `05 - Orders Workflow`
-   7. `06 - Rentals Workflow`
-   8. `99 - Cleanup Workflow`
+## Biến quan trọng
+- `adminUsername` / `adminPassword`: tài khoản admin trên môi trường local
+- `userUsername` / `userPassword`: sẽ được ghi đè sau request `Register User`
+- `managedUserId`, `managedUsername`, `managedUserEmail`: tài khoản được tạo từ luồng đăng ký auth
+- `adminToken`, `userToken`: JWT dùng cho các API cần xác thực
+- `seedCategoryId`, `seedBookId`, `seedBookItemId`, `seedOrderId`, `seedRentalId`: ID mẫu để test các API chi tiết
 
-## Đăng nhập
-- Đăng nhập sử dụng endpoint: `POST /api/v1/auth/login`.
-
-## Đăng ký
-- Đăng ký sử dụng endpoint: `POST /api/v1/auth/register`.
-
-## Dữ liệu mặc định để test nhanh
-- `admin / Admin@123`
-- `user / User@123`
-
+## Ghi chú
+- Bộ test này chỉ nhắm vào 6 controller hiện đang được implement trong backend.
+- Các request create / update / delete sẽ lưu ID trả về vào environment để dùng cho các bước sau.
+- `05 - Orders` đã có kịch bản kiểm thử ngưỡng tồn kho theo atomic update: tạo sách `total_stock=1`, lần đặt đầu thành công, lần đặt cùng dữ liệu tiếp theo phải lỗi `1005`.
+- Nếu dữ liệu auth local của bạn không khớp `admin / Admin@123`, hãy cập nhật lại environment trước khi chạy.
+- Request tạo rental thành công cần `book_item` có trạng thái khớp điều kiện service hiện tại (`San sang`).

@@ -14,7 +14,6 @@ public interface PromotionMapper {
     @Mapping(target = "usedCount", ignore = true)
     @Mapping(target = "startDate", source = "validFrom")
     @Mapping(target = "endDate", source = "validTo")
-    @Mapping(target = "version", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     Promotion toEntity(PromotionRequest request);
