@@ -39,6 +39,9 @@ public class OrderResponse {
     @JsonProperty("order_status")
     private String orderStatus;
 
+    @JsonProperty("payment_url")
+    private String paymentUrl; // Thêm trường này
+
     @JsonProperty("items")
     private List<OrderItemResponse> items;
 }
