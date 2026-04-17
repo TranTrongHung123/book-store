@@ -363,3 +363,12 @@ CREATE INDEX idx_promotion_validity ON `promotion` (`status`, `start_date`, `end
 CREATE INDEX idx_chat_session_active ON `chat_session` (`user_id`, `status`);
 CREATE INDEX idx_inventory_action ON `inventory_log` (`action_type`);
 CREATE INDEX idx_flash_sale_status ON `flash_sale_campaign` (`status`, `start_time`, `end_time`);
+CREATE INDEX idx_chat_msg_session_time
+    ON chat_message (session_id, created_at DESC);
+
+-- 12. FULLTEXT INDEX CHO TÌM KIẾM TOÀN VĂN TRÊN SÁCH VÀ TÁC GIẢ
+ALTER TABLE book
+    ADD FULLTEXT INDEX ft_book_search (title, description);
+
+ALTER TABLE author
+    ADD FULLTEXT INDEX ft_author_search (name, biography);
