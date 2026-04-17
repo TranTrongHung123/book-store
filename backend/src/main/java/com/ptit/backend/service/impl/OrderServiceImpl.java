@@ -97,7 +97,6 @@ public class OrderServiceImpl implements OrderService {
 
         BigDecimal subTotal = ZERO;
         List<OrderDetail> orderDetails = new ArrayList<>();
-        List<Book> booksToUpdate = new ArrayList<>();
 
         for (OrderItemRequest itemRequest : request.getItems()) {
             Book book = resolveBookForOrderItem(itemRequest);
@@ -106,8 +105,8 @@ public class OrderServiceImpl implements OrderService {
                 throw new AppException(ErrorCode.ORDER_ITEM_INVALID, "So luong mua phai lon hon 0");
             }
 
-            int availableStock = book.getTotalStock() != null ? book.getTotalStock() : 0;
-            if (availableStock < quantity) {
+            int rowsUpdated = bookRepository.decreaseStockIfAvailable(book.getBookId(), quantity);
+            if (rowsUpdated == 0) {
                 throw new AppException(ErrorCode.INSUFFICIENT_STOCK);
             }
 
@@ -124,8 +123,6 @@ public class OrderServiceImpl implements OrderService {
             detail.setUnitPrice(unitPrice);
             orderDetails.add(detail);
 
-            book.setTotalStock(availableStock - quantity);
-            booksToUpdate.add(book);
         }
 
         Promotion promotion = null;
@@ -156,7 +153,6 @@ public class OrderServiceImpl implements OrderService {
             detail.setOrder(savedOrder);
         }
         List<OrderDetail> savedDetails = orderDetailRepository.saveAll(orderDetails);
-        bookRepository.saveAll(booksToUpdate);
 
         int earnedPoints = totalAmount.divide(POINTS_DIVISOR, 0, RoundingMode.DOWN).intValue();
         user.setTotalPoints((user.getTotalPoints() != null ? user.getTotalPoints() : 0) + earnedPoints);

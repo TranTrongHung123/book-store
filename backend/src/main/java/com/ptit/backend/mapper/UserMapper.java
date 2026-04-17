@@ -13,7 +13,6 @@ public interface UserMapper {
 
     @Mapping(target = "userId", ignore = true)
     @Mapping(target = "role", source = "roleId")
-    @Mapping(target = "version", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     User toEntity(UserRequest request);

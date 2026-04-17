@@ -57,15 +57,21 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/books/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/categories/**").permitAll()
                         .requestMatchers("/api/v1/payment/vnpay-callback").permitAll()
-                        .requestMatchers("/api/v1/payment/vnpay-ipn").permitAll()                        .requestMatchers(HttpMethod.GET, "/api/v1/orders/**").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers("/api/v1/payment/vnpay-ipn").permitAll()                        .requestMatchers(HttpMethod.GET, "/api/v1/firebase/**").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/support/claim-waiting").hasAnyRole("ADMIN", "MANAGER", "STAFF")
+                        .requestMatchers(HttpMethod.POST, "/api/v1/support/**").authenticated()
+                        .requestMatchers(HttpMethod.PATCH, "/api/v1/support/**").hasAnyRole("ADMIN", "MANAGER", "STAFF")
+                        .requestMatchers(HttpMethod.GET, "/api/v1/orders/**").hasAnyRole("USER", "ADMIN", "MANAGER", "STAFF")
                         .requestMatchers(HttpMethod.POST, "/api/v1/orders/**").hasAnyRole("USER", "ADMIN")
-                        .requestMatchers(HttpMethod.PUT, "/api/v1/orders/**").hasAnyRole("ADMIN", "STAFF")
-                        .requestMatchers(HttpMethod.PATCH, "/api/v1/orders/**").hasAnyRole("ADMIN", "STAFF")
-                        .requestMatchers(HttpMethod.DELETE, "/api/v1/orders/**").hasAnyRole("ADMIN", "STAFF")
-                        .requestMatchers(HttpMethod.POST, "/api/v1/**").hasAnyRole("ADMIN", "STAFF")
-                        .requestMatchers(HttpMethod.PUT, "/api/v1/**").hasAnyRole("ADMIN", "STAFF")
-                        .requestMatchers(HttpMethod.PATCH, "/api/v1/**").hasAnyRole("ADMIN", "STAFF")
-                        .requestMatchers(HttpMethod.DELETE, "/api/v1/**").hasAnyRole("ADMIN", "STAFF")
+                        .requestMatchers(HttpMethod.PUT, "/api/v1/orders/**").hasAnyRole("ADMIN", "MANAGER", "STAFF")
+                        .requestMatchers(HttpMethod.PATCH, "/api/v1/orders/**").hasAnyRole("ADMIN", "MANAGER", "STAFF")
+                        .requestMatchers(HttpMethod.DELETE, "/api/v1/orders/**").hasAnyRole("ADMIN", "MANAGER", "STAFF")
+                        .requestMatchers(HttpMethod.GET, "/api/v1/users/**").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/staff/**").hasAnyRole("ADMIN", "MANAGER", "STAFF")
+                        .requestMatchers(HttpMethod.POST, "/api/v1/**").hasAnyRole("ADMIN", "MANAGER", "STAFF")
+                        .requestMatchers(HttpMethod.PUT, "/api/v1/**").hasAnyRole("ADMIN", "MANAGER", "STAFF")
+                        .requestMatchers(HttpMethod.PATCH, "/api/v1/**").hasAnyRole("ADMIN", "MANAGER", "STAFF")
+                        .requestMatchers(HttpMethod.DELETE, "/api/v1/**").hasAnyRole("ADMIN", "MANAGER", "STAFF")
                         .anyRequest().authenticated());
 
         return http.build();
@@ -131,5 +137,3 @@ public class SecurityConfig {
         response.getWriter().write(payload);
     }
 }
-
-

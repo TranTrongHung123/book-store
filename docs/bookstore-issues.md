@@ -6,12 +6,12 @@
 Nhiều người cùng mua một quyển sách cuối cùng hoặc cùng áp dụng một mã giảm giá chỉ còn 1 lượt dùng.
 
 **Hướng giải quyết:**  
-Optimistic Locking.
+Atomic update khi trừ tồn kho.
 
 **Cách làm:**
-- Thêm cột `version` vào bảng `book`, `promotion`, `user`.
-- Khi cập nhật, Spring Boot sẽ kiểm tra xem `version` có thay đổi không.
-- Nếu có người khác đã cập nhật trước, hệ thống sẽ báo lỗi và yêu cầu người sau thử lại.
+- Trừ kho bằng một câu lệnh SQL duy nhất tại `BookRepository#decreaseStockIfAvailable`.
+- Điều kiện `WHERE total_stock >= :quantity` đảm bảo không thể trừ âm khi có nhiều request đồng thời.
+- Nếu câu lệnh update không tác động dòng nào, service ném `AppException(ErrorCode.INSUFFICIENT_STOCK)`.
 
 ---
 
