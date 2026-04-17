@@ -16,7 +16,7 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.util.StringUtils;
 
 @Slf4j
-@Configuration
+// @Configuration
 @RequiredArgsConstructor
 public class FirebaseAdminConfig {
 

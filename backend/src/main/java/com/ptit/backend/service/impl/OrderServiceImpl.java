@@ -212,6 +212,7 @@ public class OrderServiceImpl implements OrderService {
         if ("00".equals(responseCode)) {
             log.info("[OrderService] Giao dịch thành công cho đơn hàng: {}", orderId);
             order.setPaymentStatus("Thanh toan thanh cong");
+            order.setOrderStatus("Đang giao");
             // Bạn nên lưu thêm mã giao dịch của VNPay để đối soát sau này
             // order.setVnpTransactionNo(transactionNo);
         } else {
