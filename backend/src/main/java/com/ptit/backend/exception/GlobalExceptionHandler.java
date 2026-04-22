@@ -4,6 +4,7 @@ import com.ptit.backend.dto.response.ApiResponse;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import jakarta.validation.ConstraintViolationException;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -67,6 +68,40 @@ public class GlobalExceptionHandler {
                 .build();
 
         return ResponseEntity.status(ErrorCode.INVALID_REQUEST.getHttpStatus()).body(response);
+    }
+
+
+    @ExceptionHandler(org.springframework.ai.retry.NonTransientAiException.class)
+    public ResponseEntity<ApiResponse<Object>> handleNonTransientAiException(
+            org.springframework.ai.retry.NonTransientAiException exception) {
+        String msg = exception.getMessage() != null ? exception.getMessage().toLowerCase() : "";
+
+        ErrorCode errorCode;
+        if (msg.contains("429") || msg.contains("quota") || msg.contains("rate limit")) {
+            errorCode = ErrorCode.CHATBOT_AI_QUOTA_EXCEEDED;
+        } else {
+            errorCode = ErrorCode.CHATBOT_AI_UNAVAILABLE;
+        }
+
+        ApiResponse<Object> response = ApiResponse.builder()
+                .code(errorCode.getCode())
+                .message(errorCode.getMessage())
+                .result(null)
+                .build();
+
+        return ResponseEntity.status(errorCode.getHttpStatus()).body(response);
+    }
+
+
+    @ExceptionHandler(com.fasterxml.jackson.core.JsonProcessingException.class)
+    public ResponseEntity<ApiResponse<Object>> handleJsonParseException(
+            com.fasterxml.jackson.core.JsonProcessingException exception) {
+        ApiResponse<Object> response = ApiResponse.builder()
+                .code(ErrorCode.CHATBOT_INVALID_RESPONSE.getCode())
+                .message(ErrorCode.CHATBOT_INVALID_RESPONSE.getMessage())
+                .result(null)
+                .build();
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
     }
 
     @ExceptionHandler(Exception.class)

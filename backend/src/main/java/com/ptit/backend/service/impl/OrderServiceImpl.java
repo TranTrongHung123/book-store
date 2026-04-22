@@ -1,5 +1,6 @@
 package com.ptit.backend.service.impl;
 
+import com.ptit.backend.config.VNPayProvider;
 import com.ptit.backend.dto.request.OrderItemRequest;
 import com.ptit.backend.dto.request.OrderRequest;
 import com.ptit.backend.dto.request.OrderStatusUpdateRequest;
@@ -11,6 +12,7 @@ import com.ptit.backend.entity.OrderDetail;
 import com.ptit.backend.entity.Promotion;
 import com.ptit.backend.entity.User;
 import com.ptit.backend.exception.AppException;
+import com.ptit.backend.exception.BusinessException;
 import com.ptit.backend.exception.ErrorCode;
 import com.ptit.backend.mapper.OrderItemMapper;
 import com.ptit.backend.mapper.OrderMapper;
@@ -26,12 +28,16 @@ import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class OrderServiceImpl implements OrderService {
@@ -39,6 +45,7 @@ public class OrderServiceImpl implements OrderService {
     private static final BigDecimal ZERO = BigDecimal.ZERO;
     private static final BigDecimal POINTS_DIVISOR = new BigDecimal("10000");
 
+    private final VNPayProvider vnPayProvider;
     private final OrderRepository orderRepository;
     private final OrderDetailRepository orderDetailRepository;
     private final UserRepository userRepository;
@@ -66,7 +73,7 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     @Transactional
-    public OrderResponse createOrder(OrderRequest request) {
+    public OrderResponse createOrder(OrderRequest request, HttpServletRequest httpServletRequest) {
         if (request.getUserId() == null) {
             throw new AppException(ErrorCode.INVALID_REQUEST, "Truong user_id la bat buoc");
         }
@@ -90,7 +97,6 @@ public class OrderServiceImpl implements OrderService {
 
         BigDecimal subTotal = ZERO;
         List<OrderDetail> orderDetails = new ArrayList<>();
-        List<Book> booksToUpdate = new ArrayList<>();
 
         for (OrderItemRequest itemRequest : request.getItems()) {
             Book book = resolveBookForOrderItem(itemRequest);
@@ -99,8 +105,8 @@ public class OrderServiceImpl implements OrderService {
                 throw new AppException(ErrorCode.ORDER_ITEM_INVALID, "So luong mua phai lon hon 0");
             }
 
-            int availableStock = book.getTotalStock() != null ? book.getTotalStock() : 0;
-            if (availableStock < quantity) {
+            int rowsUpdated = bookRepository.decreaseStockIfAvailable(book.getBookId(), quantity);
+            if (rowsUpdated == 0) {
                 throw new AppException(ErrorCode.INSUFFICIENT_STOCK);
             }
 
@@ -117,8 +123,6 @@ public class OrderServiceImpl implements OrderService {
             detail.setUnitPrice(unitPrice);
             orderDetails.add(detail);
 
-            book.setTotalStock(availableStock - quantity);
-            booksToUpdate.add(book);
         }
 
         Promotion promotion = null;
@@ -149,15 +153,76 @@ public class OrderServiceImpl implements OrderService {
             detail.setOrder(savedOrder);
         }
         List<OrderDetail> savedDetails = orderDetailRepository.saveAll(orderDetails);
-        bookRepository.saveAll(booksToUpdate);
 
         int earnedPoints = totalAmount.divide(POINTS_DIVISOR, 0, RoundingMode.DOWN).intValue();
         user.setTotalPoints((user.getTotalPoints() != null ? user.getTotalPoints() : 0) + earnedPoints);
         userRepository.save(user);
 
-        return orderMapper.toResponse(savedOrder, savedDetails);
+        // 1. Map ra Response
+        OrderResponse response = orderMapper.toResponse(savedOrder, savedDetails);
+
+        // [THÊM MỚI] - 2. Xử lý logic sinh Link VNPay
+        if ("VNPAY".equalsIgnoreCase(request.getPaymentMethod())) {
+            // vnPayProvider là class bạn Inject vào Service để tạo URL (như các trao đổi trước)
+            // Truyền savedOrder vào để lấy được ID đơn hàng (TxnRef) và Tổng tiền (Amount)
+            String paymentUrl = vnPayProvider.createPaymentUrl(savedOrder, httpServletRequest);
+
+            response.setPaymentUrl(paymentUrl);
+        } else {
+            response.setPaymentUrl(null); // Trả về null nếu là COD
+        }
+
+        return response;
     }
 
+
+    @Transactional
+    public void confirmOrderPayment(Long orderId, long vnpAmount, String responseCode, String transactionNo) {
+        log.info("[OrderService] Bắt đầu xác nhận thanh toán cho Đơn hàng ID: {}, Số tiền VNP gửi: {}, ResponseCode: {}",
+                orderId, vnpAmount, responseCode);
+
+        // 1. Tìm đơn hàng
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> {
+                    log.error("[OrderService] LỖI: Không tìm thấy Đơn hàng với ID: {}", orderId);
+                    return new BusinessException(BusinessException.ErrorCode.ORDER_NOT_FOUND);
+                });
+
+        // 2. Kiểm tra số tiền
+        // In ra cả 2 giá trị để so sánh nếu có lệch
+        long expectedAmount = order.getTotalAmount().longValue();
+        if (expectedAmount != vnpAmount) {
+            log.error("[OrderService] LỖI: Số tiền không khớp! Trong DB: {}, VNPay gửi: {}", expectedAmount, vnpAmount);
+            throw new BusinessException(BusinessException.ErrorCode.INVALID_AMOUNT);
+        }
+
+        // 3. Kiểm tra trạng thái đơn hàng (Đây là chỗ bạn đang bị vướng)
+//        if (!"PENDING".equals(order.getPaymentStatus())) {
+//            log.warn("[OrderService] CẢNH BÁO: Đơn hàng {} đã được xử lý trước đó. Trạng thái hiện tại: {}",
+//                    orderId, order.getPaymentStatus());
+//            throw new BusinessException(BusinessException.ErrorCode.ORDER_ALREADY_CONFIRMED);
+//        }
+
+        if ("Thanh toan thanh cong".equals(order.getPaymentStatus())) {
+            log.warn("[OrderService] Đơn hàng {} đã THÀNH CÔNG từ trước. Bỏ qua để tránh xử lý trùng.", orderId);
+            throw new BusinessException(BusinessException.ErrorCode.ORDER_ALREADY_CONFIRMED);
+        }
+
+        // 4. Xử lý cập nhật
+        if ("00".equals(responseCode)) {
+            log.info("[OrderService] Giao dịch thành công cho đơn hàng: {}", orderId);
+            order.setPaymentStatus("Thanh toan thanh cong");
+            order.setOrderStatus("Đang giao");
+            // Bạn nên lưu thêm mã giao dịch của VNPay để đối soát sau này
+            // order.setVnpTransactionNo(transactionNo);
+        } else {
+            log.warn("[OrderService] Giao dịch thất bại (Mã lỗi từ VNPay: {}) cho đơn hàng: {}", responseCode, orderId);
+            order.setPaymentStatus("Thanh toan that bai");
+        }
+
+        orderRepository.save(order);
+        log.info("[OrderService] Đã cập nhật trạng thái đơn hàng {} xuống Database thành công.", orderId);
+    }
     @Override
     @Transactional
     public OrderResponse updateOrderStatus(Long id, OrderStatusUpdateRequest request) {

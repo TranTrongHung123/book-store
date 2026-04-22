@@ -40,7 +40,13 @@ public enum ErrorCode {
     BOOK_ITEM_NOT_FOUND(3002, "Khong tim thay cuon sach vat ly", HttpStatus.NOT_FOUND),
     BOOK_ITEM_NOT_FOR_RENT(3003, "Cuon sach nay khong ho tro cho thue", HttpStatus.BAD_REQUEST),
     BOOK_ITEM_NOT_AVAILABLE(3004, "Cuon sach hien khong san sang de cho thue", HttpStatus.BAD_REQUEST),
-    INVALID_RENTAL_DATA(3005, "Du lieu thue sach khong hop le", HttpStatus.BAD_REQUEST);
+    INVALID_RENTAL_DATA(3005, "Du lieu thue sach khong hop le", HttpStatus.BAD_REQUEST),
+
+    CHATBOT_SESSION_NOT_FOUND(4001, "Phien chat khong ton tai hoac da ket thuc", HttpStatus.NOT_FOUND),
+    CHATBOT_AI_QUOTA_EXCEEDED(4002, "Dich vu AI tam thoi khong kha dung do het quota, vui long thu lai sau", HttpStatus.SERVICE_UNAVAILABLE),
+    CHATBOT_AI_UNAVAILABLE(4003, "Dich vu AI dang gap su co, vui long thu lai sau", HttpStatus.SERVICE_UNAVAILABLE),
+    CHATBOT_INVALID_RESPONSE(4004, "AI tra ve dinh dang khong hop le", HttpStatus.INTERNAL_SERVER_ERROR),
+    CHATBOT_MESSAGE_EMPTY(4005, "Noi dung tin nhan khong duoc de trong", HttpStatus.BAD_REQUEST);
 
     private final int code;
     private final String message;

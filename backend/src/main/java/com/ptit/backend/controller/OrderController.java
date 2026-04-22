@@ -6,6 +6,7 @@ import com.ptit.backend.dto.response.ApiResponse;
 import com.ptit.backend.dto.response.OrderResponse;
 import com.ptit.backend.dto.response.PagedResponse;
 import com.ptit.backend.service.OrderService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -62,8 +63,8 @@ public class OrderController {
     }
 
     @PostMapping
-    public ResponseEntity<ApiResponse<OrderResponse>> createOrder(@Valid @RequestBody OrderRequest request) {
-        OrderResponse result = orderService.createOrder(request);
+    public ResponseEntity<ApiResponse<OrderResponse>> createOrder(@Valid @RequestBody OrderRequest request, HttpServletRequest httpServletRequest) {
+        OrderResponse result = orderService.createOrder(request,httpServletRequest);
         return ResponseEntity.status(HttpStatus.CREATED).body(success(result));
     }
 
