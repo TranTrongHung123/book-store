@@ -67,9 +67,16 @@ public class FirebaseAdminConfig {
             }
         }
 
-        ClassPathResource classPathResource = new ClassPathResource("firebase-service-account.json");
-        if (classPathResource.exists()) {
-            try (InputStream inputStream = classPathResource.getInputStream()) {
+        ClassPathResource authKeyResource = new ClassPathResource("firebase-auth-key.json");
+        if (authKeyResource.exists()) {
+            try (InputStream inputStream = authKeyResource.getInputStream()) {
+                return GoogleCredentials.fromStream(inputStream);
+            }
+        }
+
+        ClassPathResource chatKeyResource = new ClassPathResource("firebase-chat-key.json");
+        if (chatKeyResource.exists()) {
+            try (InputStream inputStream = chatKeyResource.getInputStream()) {
                 return GoogleCredentials.fromStream(inputStream);
             }
         }
