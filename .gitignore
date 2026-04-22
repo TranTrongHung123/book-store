@@ -2,6 +2,7 @@ frontend
 AGENTS.md
 HELP.md
 target/
+.cursor
 .mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
@@ -36,6 +37,8 @@ build/
 # =========================
 # FIREBASE / GOOGLE / SECRETS
 # =========================
+firebase-auth-key.json
+firebase-chat-key.json
 firebase-service-account.json
 *firebase*adminsdk*.json
 serviceAccountKey.json
