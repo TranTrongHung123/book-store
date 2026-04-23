@@ -299,7 +299,7 @@
 {
   "user_id": "{{managedUserId}}",
   "shipping_address": "Ha Noi",
-  "payment_method": "COD",
+  "payment_method": "VNPAY",
   "items": [
    {
       "book_id": "{{bookId}}",
@@ -324,7 +324,7 @@
         "order_date": "2026-04-23T17:23:22.140086",
         "total_amount": 76000,
         "shipping_address": "Ha Noi",
-        "payment_method": "COD",
+        "payment_method": "VNPAY",
         "order_status": "Cho duyet",
         "payment_url": "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html?vnp_Amount=7600000&vnp_Command=pay&vnp_CreateDate=20260417153636&vnp_CurrCode=VND&vnp_ExpireDate=20260417155136&vnp_IpAddr=192.168.0.101&vnp_Locale=vn&vnp_OrderInfo=Thanh+toan+don+hang+11&vnp_OrderType=250000&vnp_ReturnUrl=https%3A%2F%2Famends-omega-glitch.ngrok-free.dev%2Fapi%2Fv1%2Fpayment%2Fvnpay-callback&vnp_TmnCode=9L6JR45G&vnp_TxnRef=11&vnp_Version=2.1.0&vnp_SecureHash=abdae70c3e63b3d0e029c51583a38e26b2983ebfb0c9dc307dad9a6979e348f693b90ca103566dfabfbc16b68a7a5770805c72e525192faab3a1c59cd65826a0",
         "items": [
