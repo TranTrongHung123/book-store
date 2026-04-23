@@ -3,6 +3,11 @@
 ## File cần import
 1. `postman/bookstore-local.postman_environment.json`
 2. `postman/bookstore-api.postman_collection.json`
+3. `postman/bookstore-admin-local.postman_environment.json` (bộ riêng cho admin)
+4. `postman/bookstore-admin-api.postman_collection.json` (bộ riêng cho admin)
+
+## Tài liệu API admin
+- `postman/admin-api.md`: mô tả mục đích, URL, input, output cho toàn bộ API admin.
 
 ## Thứ tự chạy khuyến nghị
 1. `00 - Auth`
