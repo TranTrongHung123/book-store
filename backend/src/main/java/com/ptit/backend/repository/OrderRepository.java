@@ -1,6 +1,8 @@
 package com.ptit.backend.repository;
 
 import com.ptit.backend.entity.Order;
+
+import java.time.LocalDateTime;
 import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -15,4 +17,6 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     List<Order> findByUserUserIdOrderByCreatedAtDesc(Long userId);
 
     long countByOrderStatusContainingIgnoreCase(String orderStatus);
+    List<Order> findByPaymentStatusAndPaymentMethodAndCreatedAtBefore(String orderStatus, String paymentMethod, LocalDateTime now);
+
 }
