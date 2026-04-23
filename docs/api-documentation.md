@@ -294,9 +294,51 @@
 
 ### 7.2. Tạo đơn hàng mới (Checkout)
 *   **Method:** `POST`
+
+````
+{
+  "user_id": "{{managedUserId}}",
+  "shipping_address": "Ha Noi",
+  "payment_method": "COD",
+  "items": [
+   {
+      "book_id": "{{bookId}}",
+      "quantity": 1,
+      "unit_price": 76000
+      }
+    ]
+  }
+````
 *   **URL:** `/orders`
 *   **Input:** Gửi object order (bao gồm mảng `items`).
-*   **Output (201 Created):** Object order vừa được tạo trong hệ thống.
+*   **Output (201 Created):
+* Nếu "payment_method": "VNPAY" thì output là:
+```json
+{
+    "code": 1000,
+    "message": "Thanh cong",
+    "result": {
+        "id": 26,
+        "user_id": 12,
+        "promotion_id": null,
+        "order_date": "2026-04-23T17:23:22.140086",
+        "total_amount": 76000,
+        "shipping_address": "Ha Noi",
+        "payment_method": "COD",
+        "order_status": "Cho duyet",
+        "payment_url": "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html?vnp_Amount=7600000&vnp_Command=pay&vnp_CreateDate=20260417153636&vnp_CurrCode=VND&vnp_ExpireDate=20260417155136&vnp_IpAddr=192.168.0.101&vnp_Locale=vn&vnp_OrderInfo=Thanh+toan+don+hang+11&vnp_OrderType=250000&vnp_ReturnUrl=https%3A%2F%2Famends-omega-glitch.ngrok-free.dev%2Fapi%2Fv1%2Fpayment%2Fvnpay-callback&vnp_TmnCode=9L6JR45G&vnp_TxnRef=11&vnp_Version=2.1.0&vnp_SecureHash=abdae70c3e63b3d0e029c51583a38e26b2983ebfb0c9dc307dad9a6979e348f693b90ca103566dfabfbc16b68a7a5770805c72e525192faab3a1c59cd65826a0",
+        "items": [
+            {
+                "book_item_id": 1,
+                "title": "Cho Tôi Xin Một Vé Đi Tuổi Thơ",
+                "unit_price": 76000,
+                "quantity": 1
+            }
+        ]
+    }
+}
+```
+*  froned phải chạy vào đường dẫn của payment_url để thanh toán sau khi thanh toán xong thì chạy về đường dẫn `vnp_ReturnUrl` xử lý callback từ VNPAY.
 
 ### 7.3. Cập nhật trạng thái đơn hàng
 *   **Method:** `PATCH`
