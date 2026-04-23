@@ -203,7 +203,7 @@ public class OrderServiceImpl implements OrderService {
 //            throw new BusinessException(BusinessException.ErrorCode.ORDER_ALREADY_CONFIRMED);
 //        }
 
-        if ("Thanh toan thanh cong".equals(order.getPaymentStatus())) {
+        if ("Đã thanh toán".equals(order.getPaymentStatus())) {
             log.warn("[OrderService] Đơn hàng {} đã THÀNH CÔNG từ trước. Bỏ qua để tránh xử lý trùng.", orderId);
             throw new BusinessException(BusinessException.ErrorCode.ORDER_ALREADY_CONFIRMED);
         }
@@ -211,13 +211,24 @@ public class OrderServiceImpl implements OrderService {
         // 4. Xử lý cập nhật
         if ("00".equals(responseCode)) {
             log.info("[OrderService] Giao dịch thành công cho đơn hàng: {}", orderId);
-            order.setPaymentStatus("Thanh toan thanh cong");
+            order.setPaymentStatus("Đã thanh toán");
             order.setOrderStatus("Đang giao");
             // Bạn nên lưu thêm mã giao dịch của VNPay để đối soát sau này
             // order.setVnpTransactionNo(transactionNo);
         } else {
             log.warn("[OrderService] Giao dịch thất bại (Mã lỗi từ VNPay: {}) cho đơn hàng: {}", responseCode, orderId);
             order.setPaymentStatus("Thanh toan that bai");
+            List<OrderDetail> orderDetails = orderDetailRepository.findByOrderOrderId(order.getOrderId());
+
+            for (OrderDetail detail : orderDetails) {
+                Book book = detail.getBook();
+                // Giảm stock: availableStock -= quantity
+                book.setTotalStock(book.getTotalStock() + detail.getQuantity());
+                bookRepository.save(book);
+            }
+
+            // Cập nhật trạng thái đơn hàng
+            order.setOrderStatus("Đã hủy");
         }
 
         orderRepository.save(order);

@@ -48,7 +48,7 @@ public class VNPayProvider {
         SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHHmmss");
         vnp_Params.put("vnp_CreateDate", formatter.format(cld.getTime()));
 
-        cld.add(Calendar.MINUTE, 15);
+        cld.add(Calendar.MINUTE, 3);
         vnp_Params.put("vnp_ExpireDate", formatter.format(cld.getTime()));
 
         // 4. Sắp xếp Alphabet
