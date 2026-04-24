@@ -2,6 +2,7 @@ package com.ptit.backend.config;
 
 import com.ptit.backend.entity.Order;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.Mac;
@@ -12,36 +13,40 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 
 @Component
+@RequiredArgsConstructor
 public class VNPayProvider {
+    private static final String VERSION = "2.1.0";
+    private static final String COMMAND = "pay";
+    private static final String CURRENCY = "VND";
+    private static final String ORDER_TYPE = "250000";
+    private static final String LOCALE = "vn";
+    private static final String DEFAULT_IP = "127.0.0.1";
+    private final VNPayProperties vnPayProperties;
 
     public String createPaymentUrl(Order order, HttpServletRequest request) {
-
-        // 1. Dùng Secret Key và TmnCode của bạn
-        String vnp_TmnCode = "9L6JR45G";
-        String vnp_HashSecret = "TV0ZGOR9WZ8RVYGD3X7ZFRU0SICPBEWA";
-        String vnp_PayUrl = "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html";
-        String vnp_ReturnUrl = "https://amends-omega-glitch.ngrok-free.dev/api/v1/payment/vnpay-callback";
+        String tmnCode = vnPayProperties.getTmnCode();
+        String hashSecret = vnPayProperties.getHashSecret();
+        String payUrl = vnPayProperties.getPayUrl();
+        String returnUrl = resolveReturnUrl(request);
 
         // 2. Tham số cơ bản
         long amount = order.getTotalAmount().longValue() * 100;
 
         Map<String, String> vnp_Params = new HashMap<>();
-        vnp_Params.put("vnp_Version", "2.1.0");
-        vnp_Params.put("vnp_Command", "pay");
-        vnp_Params.put("vnp_TmnCode", vnp_TmnCode);
+        vnp_Params.put("vnp_Version", VERSION);
+        vnp_Params.put("vnp_Command", COMMAND);
+        vnp_Params.put("vnp_TmnCode", tmnCode);
         vnp_Params.put("vnp_Amount", String.valueOf(amount));
-        vnp_Params.put("vnp_CurrCode", "VND");
+        vnp_Params.put("vnp_CurrCode", CURRENCY);
 
         vnp_Params.put("vnp_TxnRef", String.valueOf(order.getOrderId()));
         vnp_Params.put("vnp_OrderInfo", "Thanh toan don hang " + order.getOrderId());
 
-        // Dùng mã danh mục chuẩn thay vì "other" như người bạn kia khuyên
-        vnp_Params.put("vnp_OrderType", "250000");
-        vnp_Params.put("vnp_Locale", "vn");
-        vnp_Params.put("vnp_ReturnUrl", vnp_ReturnUrl);
+        vnp_Params.put("vnp_OrderType", ORDER_TYPE);
+        vnp_Params.put("vnp_Locale", LOCALE);
+        vnp_Params.put("vnp_ReturnUrl", returnUrl);
 
-        // Dùng IP thật của máy bạn (từ ipconfig)
-        vnp_Params.put("vnp_IpAddr", "192.168.0.101");
+        vnp_Params.put("vnp_IpAddr", resolveClientIp(request));
 
         // 3. Thời gian
         Calendar cld = Calendar.getInstance(TimeZone.getTimeZone("Etc/GMT+7"));
@@ -92,10 +97,10 @@ public class VNPayProvider {
 
         // 5. Băm bằng HMAC-SHA512 (Chuẩn theo code VNPayConfig của bạn)
         String queryUrl = query.toString();
-        String vnp_SecureHash = hmacSHA512(vnp_HashSecret, hashData.toString());
+        String vnp_SecureHash = hmacSHA512(hashSecret, hashData.toString());
         queryUrl += "&vnp_SecureHash=" + vnp_SecureHash;
 
-        return vnp_PayUrl + "?" + queryUrl;
+        return payUrl + "?" + queryUrl;
     }
 
     // Hàm băm nguyên bản
@@ -119,15 +124,16 @@ public class VNPayProvider {
     }
 
     public boolean verifyIpn(Map<String, String> params) {
+        Map<String, String> filteredParams = new HashMap<>(params);
         // 1. Lấy chữ ký do VNPay gửi về
-        String vnp_SecureHash = params.get("vnp_SecureHash");
+        String vnp_SecureHash = filteredParams.get("vnp_SecureHash");
 
         // 2. Xóa các trường hash ra khỏi map trước khi băm lại
-        params.remove("vnp_SecureHashType");
-        params.remove("vnp_SecureHash");
+        filteredParams.remove("vnp_SecureHashType");
+        filteredParams.remove("vnp_SecureHash");
 
         // 3. Sắp xếp các tham số
-        List<String> fieldNames = new ArrayList<>(params.keySet());
+        List<String> fieldNames = new ArrayList<>(filteredParams.keySet());
         Collections.sort(fieldNames);
 
         StringBuilder hashData = new StringBuilder();
@@ -136,7 +142,7 @@ public class VNPayProvider {
             Iterator<String> itr = fieldNames.iterator();
             while (itr.hasNext()) {
                 String fieldName = itr.next();
-                String fieldValue = params.get(fieldName);
+                String fieldValue = filteredParams.get(fieldName);
                 if ((fieldValue != null) && (fieldValue.length() > 0)) {
                     // Nối chuỗi giống hệt lúc tạo link (chỉ encode value)
                     hashData.append(fieldName);
@@ -152,11 +158,53 @@ public class VNPayProvider {
         }
 
         // 4. Băm lại chuỗi bằng HashSecret của bạn
-        String vnp_HashSecret = "TV0ZGOR9WZ8RVYGD3X7ZFRU0SICPBEWA";
+        String vnp_HashSecret = vnPayProperties.getHashSecret();
         String signValue = hmacSHA512(vnp_HashSecret, hashData.toString());
 
         // 5. So sánh 2 chữ ký
         return signValue.equals(vnp_SecureHash);
+    }
+
+    private String resolveClientIp(HttpServletRequest request) {
+        if (request == null) {
+            return DEFAULT_IP;
+        }
+        String forwardedFor = request.getHeader("X-Forwarded-For");
+        if (forwardedFor != null && !forwardedFor.isBlank()) {
+            return forwardedFor.split(",")[0].trim();
+        }
+        String realIp = request.getHeader("X-Real-IP");
+        if (realIp != null && !realIp.isBlank()) {
+            return realIp.trim();
+        }
+        String remoteAddr = request.getRemoteAddr();
+        return (remoteAddr == null || remoteAddr.isBlank()) ? DEFAULT_IP : remoteAddr;
+    }
+
+    private String resolveReturnUrl(HttpServletRequest request) {
+        String configuredUrl = vnPayProperties.getReturnUrl();
+        if (configuredUrl != null && !configuredUrl.isBlank()) {
+            return configuredUrl.trim();
+        }
+        if (request == null) {
+            return "http://localhost:8081/api/v1/payment/vnpay-callback";
+        }
+
+        String scheme = request.getScheme();
+        String host = request.getHeader("X-Forwarded-Host");
+        if (host == null || host.isBlank()) {
+            host = request.getHeader("Host");
+        }
+        if (host == null || host.isBlank()) {
+            host = request.getServerName() + ":" + request.getServerPort();
+        }
+
+        String forwardedProto = request.getHeader("X-Forwarded-Proto");
+        if (forwardedProto != null && !forwardedProto.isBlank()) {
+            scheme = forwardedProto.trim();
+        }
+
+        return scheme + "://" + host + "/api/v1/payment/vnpay-callback";
     }
 
 }
