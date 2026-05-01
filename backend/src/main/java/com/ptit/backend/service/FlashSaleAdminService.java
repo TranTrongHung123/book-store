@@ -16,4 +16,7 @@ public interface FlashSaleAdminService {
     Page<FlashSaleItemResponse> getCampaignItems(Long campaignId, Pageable pageable);
 
     FlashSaleItemResponse addCampaignItem(Long campaignId, FlashSaleItemRequest request);
+
+    void deleteCampaignItem(Long campaignId, Long itemId);
+    void deleteCampaign(Long campaignId);
 }

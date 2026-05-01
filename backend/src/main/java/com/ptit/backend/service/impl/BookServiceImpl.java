@@ -186,9 +186,9 @@ public class BookServiceImpl implements BookService {
                         .orElse(null));
 
         Integer soldCount = orderDetailRepository.sumSoldQuantityByBookId(book.getBookId()).intValue();
-        Integer rentalCount = (int) rentalRepository.countByBookItemBookBookId(book.getBookId());
 
-        return bookMapper.toResponse(book, authorName, categoryName, soldCount, rentalCount, List.of());
+        return bookMapper.toResponse(book, authorName, categoryName, soldCount, 0, List.of());
+// Hoặc truyền null: bookMapper.toResponse(book, authorName, categoryName, soldCount, null, List.of());
     }
 }
 

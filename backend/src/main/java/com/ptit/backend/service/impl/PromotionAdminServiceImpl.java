@@ -5,10 +5,10 @@ import com.ptit.backend.dto.response.PromotionResponse;
 import com.ptit.backend.entity.Promotion;
 import com.ptit.backend.exception.AppException;
 import com.ptit.backend.exception.ErrorCode;
+import com.ptit.backend.mapper.PromotionMapper;
 import com.ptit.backend.repository.PromotionRepository;
 import com.ptit.backend.service.PromotionAdminService;
 import java.time.LocalDateTime;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -21,6 +21,7 @@ import org.springframework.util.StringUtils;
 public class PromotionAdminServiceImpl implements PromotionAdminService {
 
     private final PromotionRepository promotionRepository;
+    private final PromotionMapper promotionMapper;
 
     @Override
     public Page<PromotionResponse> getPromotions(Pageable pageable) {
@@ -30,7 +31,7 @@ public class PromotionAdminServiceImpl implements PromotionAdminService {
     @Override
     @Transactional
     public PromotionResponse createPromotion(PromotionRequest request) {
-        validateTimeRange(request.getValidFrom(), request.getValidTo());
+        validateTimeRange(request.getStartDate(), request.getEndDate());
 
         if (StringUtils.hasText(request.getCode()) && promotionRepository.findByCode(request.getCode().trim()).isPresent()) {
             throw new AppException(ErrorCode.INVALID_REQUEST, "Ma khuyen mai da ton tai");
@@ -54,7 +55,7 @@ public class PromotionAdminServiceImpl implements PromotionAdminService {
         Promotion promotion = promotionRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.PROMOTION_NOT_FOUND));
 
-        validateTimeRange(request.getValidFrom(), request.getValidTo());
+        validateTimeRange(request.getStartDate(), request.getEndDate());
 
         if (StringUtils.hasText(request.getCode())) {
             String newCode = request.getCode().trim();
@@ -85,14 +86,26 @@ public class PromotionAdminServiceImpl implements PromotionAdminService {
         if (!partialUpdate || request.getUsageLimit() != null) {
             promotion.setUsageLimit(request.getUsageLimit());
         }
-        if (!partialUpdate || request.getValidFrom() != null) {
-            promotion.setStartDate(request.getValidFrom());
+        if (!partialUpdate || request.getStartDate() != null) {
+            promotion.setStartDate(request.getStartDate());
         }
-        if (!partialUpdate || request.getValidTo() != null) {
-            promotion.setEndDate(request.getValidTo());
+        if (!partialUpdate || request.getEndDate() != null) {
+            promotion.setEndDate(request.getEndDate());
         }
         if (!partialUpdate || request.getStatus() != null) {
             promotion.setStatus(request.getStatus());
+        }
+        if (!partialUpdate || StringUtils.hasText(request.getTitle())) {
+            promotion.setTitle(request.getTitle());
+        }
+        if (!partialUpdate || StringUtils.hasText(request.getDescription())) {
+            promotion.setDescription(request.getDescription());
+        }
+        if (!partialUpdate || (request.getApplicableCategories() != null && !request.getApplicableCategories().isEmpty())) {
+            String categories = request.getApplicableCategories() == null || request.getApplicableCategories().isEmpty()
+                    ? null
+                    : String.join(",", request.getApplicableCategories());
+            promotion.setApplicableCategories(categories);
         }
     }
 
@@ -103,22 +116,6 @@ public class PromotionAdminServiceImpl implements PromotionAdminService {
     }
 
     private PromotionResponse toResponse(Promotion entity) {
-        String conditionText = entity.getMinOrderValue() == null
-                ? null
-                : "Don toi thieu " + entity.getMinOrderValue();
-
-        return PromotionResponse.builder()
-                .id(entity.getPromotionId())
-                .code(entity.getCode())
-                .title(entity.getCode())
-                .subtitle(entity.getMaxDiscountAmount() == null ? null : "Giam toi da " + entity.getMaxDiscountAmount())
-                .discountPercent(entity.getDiscountPercent())
-                .voucherType("ORDER")
-                .appliesToCategories(List.of())
-                .conditionText(conditionText)
-                .validFrom(entity.getStartDate())
-                .validTo(entity.getEndDate())
-                .terms("")
-                .build();
+        return promotionMapper.toResponse(entity);
     }
 }

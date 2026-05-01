@@ -41,16 +41,16 @@ public class BookResponse {
     @JsonProperty("sold_count")
     private Integer soldCount;
 
-    @JsonProperty("rental_count")
-    private Integer rentalCount;
-
     @JsonProperty("description")
     private String description;
 
-    @JsonProperty("long_description")
-    private String longDescription;
-
     @JsonProperty("gallery_images")
     private List<String> galleryImages;
+
+    @JsonProperty("rental_count")
+    private Integer rentalCount;
+
+    @JsonProperty("long_description")
+    private String longDescription;
 }
 

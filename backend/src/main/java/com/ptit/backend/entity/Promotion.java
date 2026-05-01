@@ -57,6 +57,14 @@ public class Promotion {
     @Column(name = "status")
     private Integer status;
 
+    @Column(name = "title")
+    private String title;
+
+    @Column(name = "description", columnDefinition = "TEXT")
+    private String description;
+
+    @Column(name = "applicable_categories")
+    private String applicableCategories;
 
     @Column(name = "created_at", updatable = false)
     @CreationTimestamp

@@ -75,6 +75,23 @@ public class FlashSaleAdminServiceImpl implements FlashSaleAdminService {
         return toItemResponse(itemRepository.save(item));
     }
 
+    @Override
+    public void deleteCampaignItem(Long campaignId, Long itemId) {
+
+    }
+
+    @Override
+    public void deleteCampaign(Long campaignId) {
+        FlashSaleCampaign campaign = campaignRepository.findById(campaignId)
+                .orElseThrow(() -> new AppException(ErrorCode.INVALID_REQUEST, "Không tìm thấy chiến dịch Flash Sale với ID: " + campaignId));
+
+        // 2. Xóa chiến dịch
+        // LƯU Ý MẠNH: Nếu trong Entity FlashSaleCampaign bạn có map OneToMany với `items`
+        // và cài đặt `cascade = CascadeType.ALL` hoặc `orphanRemoval = true`,
+        // thì khi xóa Campaign, toàn bộ các Item bên trong nó sẽ TỰ ĐỘNG BỊ XÓA THEO.
+        campaignRepository.delete(campaign);
+    }
+
     private void ensureCampaignExists(Long campaignId) {
         if (!campaignRepository.existsById(campaignId)) {
             throw new AppException(ErrorCode.INVALID_REQUEST, "Khong tim thay campaign");
