@@ -48,6 +48,8 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional(readOnly = true)
     public LoginResponse login(LoginRequest request) {
+        System.out.println(">>> ĐANG ĐĂNG NHẬP VỚI USER: " + request.getUsername());
+        System.out.println(">>> ĐANG ĐĂNG NHẬP VỚI PASS: " + request.getPassword());
         try {
             String identifier = request.getUsername().trim();
             Authentication authentication = authenticationManager.authenticate(

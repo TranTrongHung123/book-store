@@ -25,6 +25,7 @@ public enum ErrorCode {
     DUPLICATE_USERNAME(1007, "Ten dang nhap da ton tai", HttpStatus.BAD_REQUEST),
     DUPLICATE_EMAIL(1008, "Email da ton tai", HttpStatus.BAD_REQUEST),
     INVALID_TOTAL_POINTS(1009, "Diem tich luy khong hop le", HttpStatus.BAD_REQUEST),
+    ADDRESS_NOT_FOUND(1010, "Dia chi giao hang khong ton tai", HttpStatus.NOT_FOUND),
 
     ORDER_NOT_FOUND(2001, "Khong tim thay don hang", HttpStatus.NOT_FOUND),
     ORDER_ITEMS_EMPTY(2002, "Don hang phai co it nhat mot san pham", HttpStatus.BAD_REQUEST),

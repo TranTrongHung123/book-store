@@ -16,36 +16,49 @@ import lombok.NoArgsConstructor;
 public class PromotionResponse {
 
     @JsonProperty("id")
-    private Long id;
+    private Long promotionId;
 
     @JsonProperty("code")
     private String code;
 
-    @JsonProperty("title")
-    private String title;
-
-    @JsonProperty("subtitle")
-    private String subtitle;
-
     @JsonProperty("discount_percent")
     private BigDecimal discountPercent;
 
-    @JsonProperty("voucher_type")
-    private String voucherType;
+    @JsonProperty("max_discount_amount")
+    private BigDecimal maxDiscountAmount;
 
-    @JsonProperty("applies_to_categories")
-    private List<String> appliesToCategories;
+    @JsonProperty("min_order_value")
+    private BigDecimal minOrderValue;
 
-    @JsonProperty("condition_text")
-    private String conditionText;
+    @JsonProperty("usage_limit")
+    private Integer usageLimit;
 
-    @JsonProperty("valid_from")
-    private LocalDateTime validFrom;
+    @JsonProperty("used_count")
+    private Integer usedCount;
 
-    @JsonProperty("valid_to")
-    private LocalDateTime validTo;
+    @JsonProperty("start_date")
+    private LocalDateTime startDate;
 
-    @JsonProperty("terms")
-    private String terms;
+    @JsonProperty("end_date")
+    private LocalDateTime endDate;
+
+    @JsonProperty("status")
+    private Integer status;
+
+    @JsonProperty("title")
+    private String title;
+
+    @JsonProperty("description")
+    private String description;
+
+    // Backend sẽ biến chuỗi "1,3" thành mảng ["1", "3"] trước khi trả về
+    @JsonProperty("applicable_categories")
+    private List<String> applicableCategories;
+
+    @JsonProperty("created_at")
+    private LocalDateTime createdAt;
+
+    @JsonProperty("updated_at")
+    private LocalDateTime updatedAt;
 }
 

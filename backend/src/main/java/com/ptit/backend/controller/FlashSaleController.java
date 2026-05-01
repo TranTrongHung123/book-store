@@ -15,13 +15,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1/flash-sale/campaigns")
@@ -73,6 +67,12 @@ public class FlashSaleController {
     ) {
         FlashSaleItemResponse result = flashSaleAdminService.addCampaignItem(campaignId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(success(result));
+    }
+
+    @DeleteMapping("/{campaignId}")
+    public ResponseEntity<Void> deleteCampaign(@PathVariable Long campaignId) {
+        flashSaleAdminService.deleteCampaign(campaignId);
+        return ResponseEntity.noContent().build(); // Trả về 204 Xóa thành công
     }
 
     private Pageable buildPageable(int page, int limit, String sort, String order) {
