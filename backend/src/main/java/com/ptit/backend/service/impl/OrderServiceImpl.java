@@ -9,6 +9,7 @@ import com.ptit.backend.entity.Book;
 import com.ptit.backend.entity.BookItem;
 import com.ptit.backend.entity.Order;
 import com.ptit.backend.entity.OrderDetail;
+import com.ptit.backend.entity.PaymentTransaction;
 import com.ptit.backend.entity.Promotion;
 import com.ptit.backend.entity.User;
 import com.ptit.backend.exception.AppException;
@@ -20,6 +21,7 @@ import com.ptit.backend.repository.BookItemRepository;
 import com.ptit.backend.repository.BookRepository;
 import com.ptit.backend.repository.OrderDetailRepository;
 import com.ptit.backend.repository.OrderRepository;
+import com.ptit.backend.repository.PaymentTransactionRepository;
 import com.ptit.backend.repository.PromotionRepository;
 import com.ptit.backend.repository.UserRepository;
 import com.ptit.backend.service.OrderService;
@@ -44,6 +46,16 @@ public class OrderServiceImpl implements OrderService {
 
     private static final BigDecimal ZERO = BigDecimal.ZERO;
     private static final BigDecimal POINTS_DIVISOR = new BigDecimal("10000");
+    private static final String PAYMENT_METHOD_VNPAY = "VNPAY";
+    private static final String PAYMENT_STATUS_UNPAID = "Chưa thanh toán";
+    private static final String PAYMENT_STATUS_PAID = "Đã thanh toán";
+    private static final String PAYMENT_STATUS_FAILED = "Thanh toán thất bại";
+    private static final String ORDER_STATUS_PENDING = "Cho duyet";
+    private static final String ORDER_STATUS_SHIPPING = "Đang giao";
+    private static final String ORDER_STATUS_CANCELLED = "Đã hủy";
+    private static final String PAYMENT_PROVIDER_VNPAY = "VNPAY";
+    private static final String TXN_STATUS_SUCCESS = "SUCCESS";
+    private static final String TXN_STATUS_FAILED = "FAILED";
 
     private final VNPayProvider vnPayProvider;
     private final OrderRepository orderRepository;
@@ -52,6 +64,7 @@ public class OrderServiceImpl implements OrderService {
     private final BookRepository bookRepository;
     private final BookItemRepository bookItemRepository;
     private final PromotionRepository promotionRepository;
+    private final PaymentTransactionRepository paymentTransactionRepository;
     private final OrderMapper orderMapper;
     private final OrderItemMapper orderItemMapper;
 
@@ -89,10 +102,10 @@ public class OrderServiceImpl implements OrderService {
         order.setCreatedAt(request.getOrderDate() != null ? request.getOrderDate() : LocalDateTime.now());
 
         if (request.getOrderStatus() == null) {
-            order.setOrderStatus("Cho duyet");
+            order.setOrderStatus(ORDER_STATUS_PENDING);
         }
         if (request.getPaymentStatus() == null) {
-            order.setPaymentStatus("Chua thanh toan");
+            order.setPaymentStatus(PAYMENT_STATUS_UNPAID);
         }
 
         BigDecimal subTotal = ZERO;
@@ -162,7 +175,7 @@ public class OrderServiceImpl implements OrderService {
         OrderResponse response = orderMapper.toResponse(savedOrder, savedDetails);
 
         // [THÊM MỚI] - 2. Xử lý logic sinh Link VNPay
-        if ("VNPAY".equalsIgnoreCase(request.getPaymentMethod())) {
+        if (PAYMENT_METHOD_VNPAY.equalsIgnoreCase(request.getPaymentMethod())) {
             // vnPayProvider là class bạn Inject vào Service để tạo URL (như các trao đổi trước)
             // Truyền savedOrder vào để lấy được ID đơn hàng (TxnRef) và Tổng tiền (Amount)
             String paymentUrl = vnPayProvider.createPaymentUrl(savedOrder, httpServletRequest);
@@ -203,21 +216,34 @@ public class OrderServiceImpl implements OrderService {
 //            throw new BusinessException(BusinessException.ErrorCode.ORDER_ALREADY_CONFIRMED);
 //        }
 
-        if ("Đã thanh toán".equals(order.getPaymentStatus())) {
+        if (PAYMENT_STATUS_PAID.equals(order.getPaymentStatus())) {
             log.warn("[OrderService] Đơn hàng {} đã THÀNH CÔNG từ trước. Bỏ qua để tránh xử lý trùng.", orderId);
             throw new BusinessException(BusinessException.ErrorCode.ORDER_ALREADY_CONFIRMED);
         }
 
+        if (transactionNo != null && !transactionNo.isBlank()
+                && paymentTransactionRepository.findByProviderTransactionId(transactionNo).isPresent()) {
+            log.warn("[OrderService] Giao dịch VNPay {} đã được xử lý trước đó.", transactionNo);
+            throw new BusinessException(BusinessException.ErrorCode.ORDER_ALREADY_CONFIRMED);
+        }
+
         // 4. Xử lý cập nhật
+        PaymentTransaction paymentTransaction = PaymentTransaction.builder()
+                .order(order)
+                .provider(PAYMENT_PROVIDER_VNPAY)
+                .providerTransactionId(transactionNo)
+                .amount(BigDecimal.valueOf(vnpAmount))
+                .responseCode(responseCode)
+                .build();
+
         if ("00".equals(responseCode)) {
             log.info("[OrderService] Giao dịch thành công cho đơn hàng: {}", orderId);
-            order.setPaymentStatus("Đã thanh toán");
-            order.setOrderStatus("Đang giao");
-            // Bạn nên lưu thêm mã giao dịch của VNPay để đối soát sau này
-            // order.setVnpTransactionNo(transactionNo);
+            order.setPaymentStatus(PAYMENT_STATUS_PAID);
+            order.setOrderStatus(ORDER_STATUS_SHIPPING);
+            paymentTransaction.setStatus(TXN_STATUS_SUCCESS);
         } else {
             log.warn("[OrderService] Giao dịch thất bại (Mã lỗi từ VNPay: {}) cho đơn hàng: {}", responseCode, orderId);
-            order.setPaymentStatus("Thanh toan that bai");
+            order.setPaymentStatus(PAYMENT_STATUS_FAILED);
             List<OrderDetail> orderDetails = orderDetailRepository.findByOrderOrderId(order.getOrderId());
 
             for (OrderDetail detail : orderDetails) {
@@ -228,10 +254,12 @@ public class OrderServiceImpl implements OrderService {
             }
 
             // Cập nhật trạng thái đơn hàng
-            order.setOrderStatus("Đã hủy");
+            order.setOrderStatus(ORDER_STATUS_CANCELLED);
+            paymentTransaction.setStatus(TXN_STATUS_FAILED);
         }
 
         orderRepository.save(order);
+        paymentTransactionRepository.save(paymentTransaction);
         log.info("[OrderService] Đã cập nhật trạng thái đơn hàng {} xuống Database thành công.", orderId);
     }
     @Override

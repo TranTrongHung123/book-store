@@ -17,6 +17,10 @@ import java.util.List;
 @Component
 @RequiredArgsConstructor
 public class OrderCleanupScheduler {
+    private static final String PAYMENT_STATUS_UNPAID = "Chưa thanh toán";
+    private static final String PAYMENT_STATUS_FAILED = "Thanh toán thất bại";
+    private static final String PAYMENT_METHOD_VNPAY = "VNPAY";
+    private static final String ORDER_STATUS_CANCELLED = "Đã hủy";
 
     private final OrderRepository orderRepository;
     private final BookRepository bookRepository;
@@ -30,12 +34,14 @@ public class OrderCleanupScheduler {
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime minutesAgo = now.minusMinutes(2);
         // Tìm các đơn PENDING_PAYMENT đã hết hạn (dựa trên expireAt)
-        List<Order> expiredOrders = orderRepository.findByPaymentStatusAndPaymentMethodAndCreatedAtBefore("Chưa thanh toán","VNPAY", minutesAgo);
+        List<Order> expiredOrders = orderRepository.findByPaymentStatusAndPaymentMethodAndCreatedAtBefore(
+                PAYMENT_STATUS_UNPAID, PAYMENT_METHOD_VNPAY, minutesAgo
+        );
 
         for (Order order : expiredOrders) {
             // Khôi phục kho
 
-            if(order.getOrderStatus().equals("Đã hủy")) {
+            if (ORDER_STATUS_CANCELLED.equals(order.getOrderStatus())) {
                 continue; // Bỏ qua nếu đã hủy
             }
             List<OrderDetail> orderDetails = orderDetailRepository.findByOrderOrderId(order.getOrderId());
@@ -48,7 +54,8 @@ public class OrderCleanupScheduler {
             }
 
             // Cập nhật trạng thái đơn hàng
-            order.setOrderStatus("Đã hủy");
+            order.setOrderStatus(ORDER_STATUS_CANCELLED);
+            order.setPaymentStatus(PAYMENT_STATUS_FAILED);
             orderRepository.save(order);
 
             // Log hoặc gửi thông báo (tùy chọn)

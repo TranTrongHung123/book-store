@@ -9,6 +9,7 @@ import com.ptit.backend.repository.UserRepository;
 import com.ptit.backend.service.ChatbotService;
 import jakarta.validation.Valid;
 import java.util.List;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
@@ -47,6 +48,30 @@ public class ChatbotController {
     }
 
     /**
+     * Lấy session ACTIVE hiện tại của user đã đăng nhập.
+     * Frontend gọi endpoint này khi mở chatbot để restore session cũ thay vì tạo mới.
+     * Trả về 404 (result = null) nếu không có session nào đang active.
+     */
+    @GetMapping("/session/active")
+    public ApiResponse<ChatSessionResponse> getActiveSession() {
+        Long userId = getCurrentUserId();
+        if (userId == null) {
+            return ApiResponse.<ChatSessionResponse>builder()
+                    .code(200)
+                    .message("Chưa đăng nhập, không có session")
+                    .result(null)
+                    .build();
+        }
+
+        Optional<ChatSessionResponse> activeSession = chatbotService.getActiveSession(userId);
+        return ApiResponse.<ChatSessionResponse>builder()
+                .code(200)
+                .message(activeSession.isPresent() ? "Tìm thấy session đang active" : "Không có session nào đang active")
+                .result(activeSession.orElse(null))
+                .build();
+    }
+
+    /**
      * Gửi tin nhắn đến chatbot và nhận phản hồi structured
      */
     @PostMapping("/chat")
@@ -61,7 +86,7 @@ public class ChatbotController {
     }
 
     /**
-     * Lấy toàn bộ lịch sử hội thoại của một session.
+     * Lấy N tin nhắn gần nhất của một session.
      */
     @GetMapping("/history/{sessionId}")
     public ApiResponse<List<ChatMessageResponse>> getHistory(@PathVariable Long sessionId) {
@@ -74,7 +99,7 @@ public class ChatbotController {
     }
 
     /**
-     * Kết thúc và đóng phiên chat
+     * Kết thúc và đóng phiên chat.
      * Session status sẽ chuyển sang CLOSED và lịch sử được bảo toàn trong DB.
      */
     @DeleteMapping("/session/{sessionId}")

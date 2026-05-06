@@ -36,6 +36,9 @@ public class OrderResponse {
     @JsonProperty("payment_method")
     private String paymentMethod;
 
+    @JsonProperty("payment_status")
+    private String paymentStatus;
+
     @JsonProperty("order_status")
     private String orderStatus;
 

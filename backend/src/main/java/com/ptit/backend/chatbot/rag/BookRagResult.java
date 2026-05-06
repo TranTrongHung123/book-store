@@ -23,6 +23,7 @@ public class BookRagResult {
     private String description;
     private BigDecimal sellingPrice;
     private Integer totalStock;
+    private Integer publicationYear;
 
     private String authors;
     private String publisherName;
