@@ -372,3 +372,10 @@ ALTER TABLE book
 
 ALTER TABLE author
     ADD FULLTEXT INDEX ft_author_search (name, biography);
+
+
+
+ALTER TABLE promotion
+ADD COLUMN title VARCHAR(255),
+ADD COLUMN description TEXT,
+ADD COLUMN applicable_categories VARCHAR(255);
