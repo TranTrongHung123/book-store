@@ -20,6 +20,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -54,7 +55,11 @@ public class ChatbotServiceImpl implements ChatbotService {
     @Value("${chatbot.memory.max-messages:20}")
     private int maxMessages;
 
-    // Session Management
+    /** Số tin nhắn gần nhất load vào history khi restore session */
+    @Value("${chatbot.history.load-last-n:10}")
+    private int historyLoadLastN;
+
+    // ─── Session Management ───────────────────────────────────────────────────
 
     @Override
     @Transactional
@@ -72,12 +77,23 @@ public class ChatbotServiceImpl implements ChatbotService {
         ChatSession saved = chatSessionRepository.save(session);
         log.info("Tạo session mới: {} (userId={})", saved.getSessionId(), userId);
 
-        return ChatSessionResponse.builder()
-                .sessionId(saved.getSessionId())
-                .status(saved.getStatus())
-                .startedAt(saved.getStartedAt())
-                .userId(userId)
-                .build();
+        return buildSessionResponse(saved);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<ChatSessionResponse> getActiveSession(Long userId) {
+        if (userId == null) return Optional.empty();
+
+        List<ChatSession> activeSessions =
+                chatSessionRepository.findActiveSessionsByUserId(userId);
+
+        if (activeSessions.isEmpty()) return Optional.empty();
+
+        // Lấy session ACTIVE mới nhất
+        ChatSession session = activeSessions.get(0);
+        log.info("Tìm thấy session ACTIVE: {} (userId={})", session.getSessionId(), userId);
+        return Optional.of(buildSessionResponse(session));
     }
 
     @Override
@@ -91,7 +107,7 @@ public class ChatbotServiceImpl implements ChatbotService {
         log.info("Đóng session: {}", sessionId);
     }
 
-    // Chat Core
+    // ─── Chat Core ────────────────────────────────────────────────────────────
 
     @Override
     @Transactional
@@ -115,10 +131,10 @@ public class ChatbotServiceImpl implements ChatbotService {
 
         log.debug("Chat [session={}]: {}", conversationId, userMessage);
 
-        // 3. RAG: Tìm context từ MySQL FULLTEXT search
+        // 3. RAG: Tìm context từ MySQL FULLTEXT search (book + author)
         String ragContext = ragSearchService.buildContextPayload(userMessage);
 
-        // 4. Load lịch sử hội thoại gần nhất
+        // 4. Load N tin nhắn gần nhất từ lịch sử hội thoại
         List<Message> history = chatMemory.get(conversationId);
 
         // 5. Gọi Gemini với structured output
@@ -156,7 +172,14 @@ public class ChatbotServiceImpl implements ChatbotService {
 
         String fullSystemPrompt = systemPrompt
                 + "\n\n═══ YÊU CẦU ĐỊNH DẠNG OUTPUT ═══\n"
-                + converter.getFormat();
+                + "Trả lời theo cấu trúc JSON sau (KHÔNG thêm markdown code block, KHÔNG thêm ký tự nào khác ngoài JSON):\n"
+                + converter.getFormat()
+                + "\n\nLưu ý:"
+                + "\n- Trường 'answer': câu trả lời NGẮN GỌN, thân thiện. TUYỆT ĐỐI KHÔNG liệt kê chi tiết từng cuốn sách hoặc danh sách mã giảm giá ở đây (hệ thống UI sẽ tự động hiển thị chúng ở dạng thẻ đẹp mắt). Chỉ cần nói 'Mình tìm thấy một số sách...' hoặc 'Bạn tham khảo các mã giảm giá bên dưới nhé'."
+                + "\n- Trường 'intent': BOOK_SEARCH | PROMOTION | POLICY | RENTAL | POINTS | GENERAL"
+                + "\n- Trường 'books': danh sách sách gợi ý (lấy đúng thông tin từ [DỮ LIỆU HỆ THỐNG], không được bịa)"
+                + "\n- Trường 'promotion_info': copy toàn bộ phần 🎁 MÃ GIẢM GIÁ từ dữ liệu vào đây nếu có."
+                + "\n- Trường 'has_results': true nếu tìm thấy sách/thông tin phù hợp";
 
         List<Message> messages = new ArrayList<>();
         messages.add(new SystemMessage(fullSystemPrompt));
@@ -169,7 +192,13 @@ public class ChatbotServiceImpl implements ChatbotService {
 
             log.debug("Raw Gemini response: {}", rawContent);
 
-            return converter.convert(rawContent);
+            // Làm sạch markdown code block nếu model bọc trong ```json ... ```
+            String cleaned = rawContent.trim();
+            if (cleaned.startsWith("```")) {
+                cleaned = cleaned.replaceAll("^```[a-zA-Z]*\\n?", "").replaceAll("```$", "").trim();
+            }
+
+            return converter.convert(cleaned);
 
         } catch (Exception e) {
             return handleAiError(e, userMessage);
@@ -205,6 +234,7 @@ public class ChatbotServiceImpl implements ChatbotService {
         throw new AppException(ErrorCode.CHATBOT_AI_UNAVAILABLE);
     }
 
+    // ─── History ──────────────────────────────────────────────────────────────
 
     @Override
     @Transactional(readOnly = true)
@@ -213,9 +243,15 @@ public class ChatbotServiceImpl implements ChatbotService {
             throw new AppException(ErrorCode.CHATBOT_SESSION_NOT_FOUND);
         }
 
-        return chatMessageRepository
-                .findBySessionSessionIdOrderByCreatedAtAsc(sessionId)
-                .stream()
+        // Chỉ load N tin nhắn gần nhất để tránh trả về quá nhiều
+        PageRequest pageRequest = PageRequest.of(0, historyLoadLastN,
+                Sort.by(Sort.Direction.DESC, "createdAt"));
+
+        List<ChatMessage> messages = chatMessageRepository.findTopNBySessionId(sessionId, pageRequest);
+        // Đảo ngược để trả về theo thứ tự thời gian tăng dần
+        Collections.reverse(messages);
+
+        return messages.stream()
                 .map(msg -> ChatMessageResponse.builder()
                         .messageId(msg.getMessageId())
                         .senderType(msg.getSenderType())
@@ -225,6 +261,16 @@ public class ChatbotServiceImpl implements ChatbotService {
                 .collect(Collectors.toList());
     }
 
+    // ─── Private helpers ──────────────────────────────────────────────────────
+
+    private ChatSessionResponse buildSessionResponse(ChatSession session) {
+        return ChatSessionResponse.builder()
+                .sessionId(session.getSessionId())
+                .status(session.getStatus())
+                .startedAt(session.getStartedAt())
+                .userId(session.getUser() != null ? session.getUser().getUserId() : null)
+                .build();
+    }
 
     private void saveMessage(ChatSession session, String senderType, String content) {
         ChatMessage msg = ChatMessage.builder()

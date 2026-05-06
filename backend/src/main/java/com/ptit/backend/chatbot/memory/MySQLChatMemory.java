@@ -14,6 +14,7 @@ import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.UserMessage;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
@@ -26,6 +27,10 @@ public class MySQLChatMemory implements ChatMemory {
 
     private final ChatMessageRepository chatMessageRepository;
     private final ChatSessionRepository chatSessionRepository;
+
+    /** Số tin nhắn gần nhất nạp vào context AI (tương ứng chatbot.memory.max-messages) */
+    @Value("${chatbot.memory.max-messages:20}")
+    private int memoryMaxMessages;
 
     /**
      * Lưu danh sách messages vào DB.
@@ -67,17 +72,14 @@ public class MySQLChatMemory implements ChatMemory {
     @Override
     @Transactional(readOnly = true)
     public List<Message> get(String conversationId) {
-        int lastN = 20;
         Long sessionId = parseSessionId(conversationId);
         if (sessionId == null) return Collections.emptyList();
 
-
-        PageRequest pageRequest = PageRequest.of(0, lastN,
+        PageRequest pageRequest = PageRequest.of(0, memoryMaxMessages,
                 Sort.by(Sort.Direction.DESC, "createdAt"));
 
         List<ChatMessage> dbMessages = chatMessageRepository
                 .findTopNBySessionId(sessionId, pageRequest);
-
 
         Collections.reverse(dbMessages);
 
