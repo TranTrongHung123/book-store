@@ -48,12 +48,13 @@ public class VNPayProvider {
 
         vnp_Params.put("vnp_IpAddr", resolveClientIp(request));
 
-        // 3. Thời gian
-        Calendar cld = Calendar.getInstance(TimeZone.getTimeZone("Etc/GMT+7"));
+        // 3. Thời gian (sử dụng Asia/Ho_Chi_Minh thay vì Etc/GMT+7 bị sai lệch giờ)
+        Calendar cld = Calendar.getInstance(TimeZone.getTimeZone("Asia/Ho_Chi_Minh"));
         SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHHmmss");
+        formatter.setTimeZone(TimeZone.getTimeZone("Asia/Ho_Chi_Minh"));
         vnp_Params.put("vnp_CreateDate", formatter.format(cld.getTime()));
 
-        cld.add(Calendar.MINUTE, 3);
+        cld.add(Calendar.MINUTE, 15); // Đổi thành 15 phút theo chuẩn VNPay
         vnp_Params.put("vnp_ExpireDate", formatter.format(cld.getTime()));
 
         // 4. Sắp xếp Alphabet
@@ -73,7 +74,7 @@ public class VNPayProvider {
                 String fieldValue = vnp_Params.get(fieldName);
                 if ((fieldValue != null) && (fieldValue.length() > 0)) {
 
-                    // Build hash data (Không mã hóa tên biến, chỉ mã hóa giá trị, không dùng %20)
+                    // Build hash data (Không mã hóa tên biến, chỉ mã hóa giá trị)
                     hashData.append(fieldName);
                     hashData.append('=');
                     hashData.append(URLEncoder.encode(fieldValue, StandardCharsets.US_ASCII.toString()));
@@ -169,16 +170,26 @@ public class VNPayProvider {
         if (request == null) {
             return DEFAULT_IP;
         }
+        String ip = DEFAULT_IP;
         String forwardedFor = request.getHeader("X-Forwarded-For");
         if (forwardedFor != null && !forwardedFor.isBlank()) {
-            return forwardedFor.split(",")[0].trim();
+            ip = forwardedFor.split(",")[0].trim();
+        } else {
+            String realIp = request.getHeader("X-Real-IP");
+            if (realIp != null && !realIp.isBlank()) {
+                ip = realIp.trim();
+            } else {
+                String remoteAddr = request.getRemoteAddr();
+                if (remoteAddr != null && !remoteAddr.isBlank()) {
+                    ip = remoteAddr;
+                }
+            }
         }
-        String realIp = request.getHeader("X-Real-IP");
-        if (realIp != null && !realIp.isBlank()) {
-            return realIp.trim();
+        // VNPay có thể lỗi chữ ký nếu IP là IPv6 (có chứa dấu : )
+        if (ip.contains(":")) {
+            return "127.0.0.1";
         }
-        String remoteAddr = request.getRemoteAddr();
-        return (remoteAddr == null || remoteAddr.isBlank()) ? DEFAULT_IP : remoteAddr;
+        return ip;
     }
 
     private String resolveReturnUrl(HttpServletRequest request) {
