@@ -43,5 +43,13 @@ public interface BookRepository extends JpaRepository<Book, Long>, JpaSpecificat
               and b.totalStock >= :quantity
             """)
     int decreaseStockIfAvailable(@Param("bookId") Long bookId, @Param("quantity") int quantity);
+
+    @Modifying
+    @Query("""
+            update Book b
+            set b.totalStock = b.totalStock + :quantity
+            where b.bookId = :bookId
+            """)
+    void increaseStock(@Param("bookId") Long bookId, @Param("quantity") int quantity);
 }
 
