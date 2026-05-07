@@ -36,6 +36,7 @@ public enum ErrorCode {
     PROMOTION_NOT_STARTED(2007, "Ma khuyen mai chua den thoi gian ap dung", HttpStatus.BAD_REQUEST),
     PROMOTION_USAGE_LIMIT_EXCEEDED(2008, "Ma khuyen mai da het luot su dung", HttpStatus.BAD_REQUEST),
     PROMOTION_MIN_ORDER_NOT_MET(2009, "Don hang chua dat gia tri toi thieu de ap ma", HttpStatus.BAD_REQUEST),
+    ORDER_CANNOT_BE_CANCELLED(2010, "Don hang hien tai khong the huy", HttpStatus.BAD_REQUEST),
 
     RENTAL_NOT_FOUND(3001, "Khong tim thay phieu thue", HttpStatus.NOT_FOUND),
     BOOK_ITEM_NOT_FOUND(3002, "Khong tim thay cuon sach vat ly", HttpStatus.NOT_FOUND),

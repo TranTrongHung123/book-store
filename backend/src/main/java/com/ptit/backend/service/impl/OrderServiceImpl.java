@@ -281,6 +281,40 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     @Transactional
+    public OrderResponse cancelOrder(Long id, Long userId) {
+        Order order = orderRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
+
+        // Check ownership
+        if (!order.getUser().getUserId().equals(userId)) {
+            throw new AppException(ErrorCode.FORBIDDEN, "Ban khong co quyen huy don hang nay");
+        }
+
+        // Check status (only allow cancelling if pending/dang xu ly)
+        String currentStatus = order.getOrderStatus();
+        boolean isPending = ORDER_STATUS_PENDING.equalsIgnoreCase(currentStatus)
+                || "Đang xử lý".equalsIgnoreCase(currentStatus);
+
+        if (!isPending) {
+            throw new AppException(ErrorCode.ORDER_CANNOT_BE_CANCELLED,
+                "Chi co the huy don hang khi dang o trang thai cho duyet hoac dang xu ly.");
+        }
+
+        // Restore stock
+        List<OrderDetail> details = orderDetailRepository.findByOrderOrderId(id);
+        for (OrderDetail detail : details) {
+            bookRepository.increaseStock(detail.getBook().getBookId(), detail.getQuantity());
+        }
+
+        // Update status
+        order.setOrderStatus(ORDER_STATUS_CANCELLED);
+        Order savedOrder = orderRepository.save(order);
+
+        return buildOrderResponse(savedOrder);
+    }
+
+    @Override
+    @Transactional
     public void deleteOrder(Long id) {
         Order order = orderRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));

@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/orders")
@@ -74,6 +75,16 @@ public class OrderController {
             @Valid @RequestBody OrderStatusUpdateRequest request
     ) {
         OrderResponse result = orderService.updateOrderStatus(id, request);
+        return ResponseEntity.ok(success(result));
+    }
+
+    @PostMapping("/{id}/cancel")
+    public ResponseEntity<ApiResponse<OrderResponse>> cancelOrder(
+            @PathVariable Long id,
+            @RequestBody Map<String, Object> payload
+    ) {
+        Long userId = Long.valueOf(payload.get("user_id").toString());
+        OrderResponse result = orderService.cancelOrder(id, userId);
         return ResponseEntity.ok(success(result));
     }
 

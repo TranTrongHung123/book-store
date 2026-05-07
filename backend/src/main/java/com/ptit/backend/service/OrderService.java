@@ -16,6 +16,8 @@ public interface OrderService {
     OrderResponse createOrder(OrderRequest request, HttpServletRequest httpServletRequest);
 
     OrderResponse updateOrderStatus(Long id, OrderStatusUpdateRequest request);
+    
+    OrderResponse cancelOrder(Long id, Long userId);
 
     void deleteOrder(Long id);
 
