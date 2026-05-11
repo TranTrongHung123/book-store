@@ -11,7 +11,10 @@ import com.google.cloud.firestore.QuerySnapshot;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseAuthException;
 import com.google.firebase.cloud.FirestoreClient;
+import com.ptit.backend.dto.request.support.StaffChatStatusRequest;
+import com.ptit.backend.dto.request.support.SupportMessageRequest;
 import com.ptit.backend.dto.request.support.SupportOpenRequest;
+import com.ptit.backend.dto.request.support.SupportTagsRequest;
 import com.ptit.backend.dto.response.FirebaseCustomTokenResponse;
 import com.ptit.backend.dto.response.support.StaffDashboardSummaryResponse;
 import com.ptit.backend.dto.response.support.SupportConversationResponse;
@@ -30,7 +33,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
@@ -316,6 +321,185 @@ public class FirebaseChatServiceImpl implements FirebaseChatService {
                 .build();
     }
 
+
+    @Override
+    public List<Map<String, Object>> getStaffConversations(Authentication authentication) {
+        assertStaff(authentication);
+        Firestore db = FirestoreClient.getFirestore();
+
+        try {
+            QuerySnapshot snapshot = db.collection("conversations").get().get();
+            return snapshot.getDocuments().stream()
+                    .map(this::mapConversationDocument)
+                    .sorted((left, right) -> Long.compare(timestampSeconds(right.get("updatedAt")), timestampSeconds(left.get("updatedAt"))))
+                    .toList();
+        } catch (Exception exception) {
+            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION, "Khong tai duoc danh sach hoi thoai ho tro");
+        }
+    }
+
+    @Override
+    public List<Map<String, Object>> getStaffConversationMessages(Authentication authentication, String conversationId) {
+        assertStaff(authentication);
+        Firestore db = FirestoreClient.getFirestore();
+
+        try {
+            DocumentReference conversationRef = db.collection("conversations").document(conversationId);
+            DocumentSnapshot conversation = conversationRef.get().get();
+            if (!conversation.exists()) {
+                throw new AppException(ErrorCode.INVALID_REQUEST, "Khong tim thay hoi thoai tren Firebase");
+            }
+
+            QuerySnapshot snapshot = conversationRef.collection("messages")
+                    .orderBy("createdAt")
+                    .get()
+                    .get();
+
+            return snapshot.getDocuments().stream()
+                    .map(this::mapMessageDocument)
+                    .toList();
+        } catch (AppException exception) {
+            throw exception;
+        } catch (Exception exception) {
+            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION, "Khong tai duoc tin nhan ho tro");
+        }
+    }
+
+    @Override
+    public SupportConversationResponse sendStaffMessage(Authentication authentication, String conversationId, SupportMessageRequest request) {
+        User actor = assertStaff(authentication);
+        Firestore db = FirestoreClient.getFirestore();
+        String safeContent = request.getContent().trim();
+        String staffUid = buildFirebaseUid(actor.getUserId());
+        String staffName = displayName(actor);
+        Timestamp now = Timestamp.now();
+
+        try {
+            DocumentReference conversationRef = db.collection("conversations").document(conversationId);
+            DocumentSnapshot conversation = conversationRef.get().get();
+            if (!conversation.exists()) {
+                throw new AppException(ErrorCode.INVALID_REQUEST, "Khong tim thay hoi thoai tren Firebase");
+            }
+
+            appendMessage(db, conversationRef, staffUid, ROLE_STAFF, staffName, safeContent, now);
+
+            Map<String, Object> updates = new HashMap<>();
+            updates.put("lastMessage", safeContent);
+            updates.put("lastMessageAt", now);
+            updates.put("updatedAt", now);
+            updates.put("status", "ACTIVE");
+            updates.put("staffUid", staffUid);
+            updates.put("staffId", actor.getUserId());
+            updates.put("staffName", staffName);
+            updates.put("lastStaffName", staffName);
+            updates.put("unreadByUser", FieldValue.increment(1));
+            updates.put("unreadByStaff", 0L);
+            conversationRef.update(updates).get();
+
+            return SupportConversationResponse.builder()
+                    .conversationId(conversationId)
+                    .status("ACTIVE")
+                    .staffUid(staffUid)
+                    .staffId(actor.getUserId())
+                    .staffName(staffName)
+                    .message("Da gui tin nhan ho tro.")
+                    .build();
+        } catch (AppException exception) {
+            throw exception;
+        } catch (Exception exception) {
+            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION, "Khong gui duoc tin nhan ho tro");
+        }
+    }
+
+    @Override
+    public SupportConversationResponse updateStaffConversationTags(Authentication authentication, String conversationId, SupportTagsRequest request) {
+        assertStaff(authentication);
+        Firestore db = FirestoreClient.getFirestore();
+        Timestamp now = Timestamp.now();
+        List<String> safeTags = sanitizeTags(request.getTags());
+
+        try {
+            DocumentReference conversationRef = db.collection("conversations").document(conversationId);
+            DocumentSnapshot conversation = conversationRef.get().get();
+            if (!conversation.exists()) {
+                throw new AppException(ErrorCode.INVALID_REQUEST, "Khong tim thay hoi thoai tren Firebase");
+            }
+
+            conversationRef.update(Map.of(
+                    "tags", safeTags,
+                    "updatedAt", now
+            )).get();
+
+            return SupportConversationResponse.builder()
+                    .conversationId(conversationId)
+                    .status(safeString(conversation.getString("status")))
+                    .message("Da cap nhat the hoi thoai.")
+                    .build();
+        } catch (AppException exception) {
+            throw exception;
+        } catch (Exception exception) {
+            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION, "Khong cap nhat duoc the hoi thoai");
+        }
+    }
+
+    @Override
+    public SupportConversationResponse markStaffConversationRead(Authentication authentication, String conversationId) {
+        assertStaff(authentication);
+        Firestore db = FirestoreClient.getFirestore();
+
+        try {
+            DocumentReference conversationRef = db.collection("conversations").document(conversationId);
+            DocumentSnapshot conversation = conversationRef.get().get();
+            if (!conversation.exists()) {
+                throw new AppException(ErrorCode.INVALID_REQUEST, "Khong tim thay hoi thoai tren Firebase");
+            }
+
+            conversationRef.update(Map.of("unreadByStaff", 0L)).get();
+            return SupportConversationResponse.builder()
+                    .conversationId(conversationId)
+                    .status(safeString(conversation.getString("status")))
+                    .message("Da danh dau hoi thoai da doc.")
+                    .build();
+        } catch (AppException exception) {
+            throw exception;
+        } catch (Exception exception) {
+            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION, "Khong danh dau duoc hoi thoai da doc");
+        }
+    }
+
+    @Override
+    public SupportConversationResponse upsertStaffChatStatus(Authentication authentication, StaffChatStatusRequest request) {
+        User actor = assertStaff(authentication);
+        Firestore db = FirestoreClient.getFirestore();
+        String staffUid = buildFirebaseUid(actor.getUserId());
+        Timestamp now = Timestamp.now();
+
+        try {
+            Map<String, Object> payload = new HashMap<>();
+            payload.put("staffUid", staffUid);
+            payload.put("staffId", actor.getUserId());
+            payload.put("staffName", displayName(actor));
+            payload.put("acceptingChats", request.isAcceptingChats());
+            payload.put("maxLoad", request.getMaxLoad() == null ? 999L : Math.max(1L, request.getMaxLoad()));
+            payload.put("lastSeenAt", now);
+            if (request.getCurrentLoad() != null) {
+                payload.put("currentLoad", Math.max(0L, request.getCurrentLoad()));
+            }
+
+            db.collection("staff_status").document(staffUid).set(payload, com.google.cloud.firestore.SetOptions.merge()).get();
+
+            return SupportConversationResponse.builder()
+                    .status(request.isAcceptingChats() ? "ONLINE" : "OFFLINE")
+                    .staffUid(staffUid)
+                    .staffId(actor.getUserId())
+                    .staffName(displayName(actor))
+                    .message("Da cap nhat trang thai nhan chat cua nhan vien.")
+                    .build();
+        } catch (Exception exception) {
+            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION, "Khong cap nhat duoc trang thai nhan chat");
+        }
+    }
+
     private Optional<StaffCandidate> findAvailableStaff(Firestore db) throws Exception {
         QuerySnapshot snapshot = db.collection("staff_status")
                 .whereEqualTo("acceptingChats", true)
@@ -396,6 +580,80 @@ public class FirebaseChatServiceImpl implements FirebaseChatService {
                 .staffName(safeString(data.get("staffName")))
                 .message(message)
                 .build();
+    }
+
+
+    private User assertStaff(Authentication authentication) {
+        User actor = resolveUser(authentication);
+        String primaryRole = normalizePrimaryRole(actor);
+        if (!(ROLE_STAFF.equals(primaryRole) || ROLE_MANAGER.equals(primaryRole) || ROLE_ADMIN.equals(primaryRole))) {
+            throw new AppException(ErrorCode.FORBIDDEN, "Chi nhan vien moi duoc thuc hien chuc nang nay");
+        }
+        return actor;
+    }
+
+    private Map<String, Object> mapConversationDocument(DocumentSnapshot document) {
+        Map<String, Object> data = new HashMap<>();
+        if (document.getData() != null) {
+            data.putAll(document.getData());
+        }
+        data.put("id", document.getId());
+        normalizeTimestampField(data, "createdAt");
+        normalizeTimestampField(data, "updatedAt");
+        normalizeTimestampField(data, "lastMessageAt");
+        data.putIfAbsent("tags", List.of());
+        data.putIfAbsent("userId", null);
+        data.putIfAbsent("staffId", null);
+        data.putIfAbsent("staffUid", null);
+        data.putIfAbsent("staffName", null);
+        data.putIfAbsent("lastStaffName", null);
+        return data;
+    }
+
+    private Map<String, Object> mapMessageDocument(DocumentSnapshot document) {
+        Map<String, Object> data = new HashMap<>();
+        if (document.getData() != null) {
+            data.putAll(document.getData());
+        }
+        data.put("id", document.getId());
+        normalizeTimestampField(data, "createdAt");
+        return data;
+    }
+
+    private void normalizeTimestampField(Map<String, Object> data, String fieldName) {
+        Object value = data.get(fieldName);
+        if (value instanceof Timestamp timestamp) {
+            Map<String, Object> normalized = new HashMap<>();
+            normalized.put("seconds", timestamp.getSeconds());
+            normalized.put("nanoseconds", timestamp.getNanos());
+            data.put(fieldName, normalized);
+        }
+    }
+
+    private long timestampSeconds(Object value) {
+        if (value instanceof Map<?, ?> map) {
+            Object seconds = map.get("seconds");
+            if (seconds instanceof Number number) {
+                return number.longValue();
+            }
+        }
+        if (value instanceof Timestamp timestamp) {
+            return timestamp.getSeconds();
+        }
+        return 0L;
+    }
+
+    private List<String> sanitizeTags(List<String> tags) {
+        if (tags == null) {
+            return List.of();
+        }
+        Set<String> seen = new java.util.LinkedHashSet<>();
+        return tags.stream()
+                .map(tag -> tag == null ? "" : tag.trim())
+                .filter(StringUtils::hasText)
+                .filter(seen::add)
+                .limit(20)
+                .collect(Collectors.toList());
     }
 
     private String buildFirebaseUid(Long userId) {
