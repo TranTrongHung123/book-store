@@ -14,5 +14,8 @@ public interface OrderDetailRepository extends JpaRepository<OrderDetail, Long> 
 
 	@Query("select coalesce(sum(od.quantity), 0) from OrderDetail od where od.book.bookId = :bookId")
 	Long sumSoldQuantityByBookId(@Param("bookId") Long bookId);
+
+	@Query("SELECT CASE WHEN COUNT(od) > 0 THEN true ELSE false END FROM OrderDetail od WHERE od.order.orderId = :orderId AND od.flashSaleItem IS NOT NULL")
+	boolean existsFlashSaleItemByOrderId(@Param("orderId") Long orderId);
 }
 

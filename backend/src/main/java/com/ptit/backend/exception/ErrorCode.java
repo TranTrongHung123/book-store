@@ -48,7 +48,16 @@ public enum ErrorCode {
     CHATBOT_AI_QUOTA_EXCEEDED(4002, "Dich vu AI tam thoi khong kha dung do het quota, vui long thu lai sau", HttpStatus.SERVICE_UNAVAILABLE),
     CHATBOT_AI_UNAVAILABLE(4003, "Dich vu AI dang gap su co, vui long thu lai sau", HttpStatus.SERVICE_UNAVAILABLE),
     CHATBOT_INVALID_RESPONSE(4004, "AI tra ve dinh dang khong hop le", HttpStatus.INTERNAL_SERVER_ERROR),
-    CHATBOT_MESSAGE_EMPTY(4005, "Noi dung tin nhan khong duoc de trong", HttpStatus.BAD_REQUEST);
+    CHATBOT_MESSAGE_EMPTY(4005, "Noi dung tin nhan khong duoc de trong", HttpStatus.BAD_REQUEST),
+
+    // Flash Sale
+    FLASH_SALE_NOT_ACTIVE(5001, "Flash sale chua bat dau hoac da ket thuc", HttpStatus.BAD_REQUEST),
+    FLASH_SALE_SOLD_OUT(5002, "San pham flash sale da het hang", HttpStatus.CONFLICT),
+    FLASH_SALE_MAX_PER_USER(5003, "Bạn đã mua sản phẩm này trong chương trình Flash Sale rồi. Mỗi khách hàng chỉ được mua tối đa 1 lần.", HttpStatus.CONFLICT),
+    FLASH_SALE_RESERVATION_EXPIRED(5004, "Reservation da het han", HttpStatus.GONE),
+    FLASH_SALE_DUPLICATE_REQUEST(5005, "Yeu cau dang duoc xu ly, vui long khong nhan lai", HttpStatus.CONFLICT),
+    FLASH_SALE_ITEM_NOT_FOUND(5006, "Khong tim thay san pham flash sale", HttpStatus.NOT_FOUND),
+    FLASH_SALE_RESERVATION_NOT_FOUND(5007, "Khong tim thay reservation", HttpStatus.NOT_FOUND);
 
     private final int code;
     private final String message;

@@ -41,8 +41,11 @@ class PaymentControllerIpnIntegrationTest {
 
         vnPayProvider = new VNPayProvider(properties);
         orderService = mock(OrderService.class);
+        com.ptit.backend.service.FlashSaleCustomerService flashSaleCustomerService = mock(com.ptit.backend.service.FlashSaleCustomerService.class);
+        com.ptit.backend.repository.OrderDetailRepository orderDetailRepository = mock(com.ptit.backend.repository.OrderDetailRepository.class);
+        org.springframework.data.redis.core.RedisTemplate<String, String> redisTemplate = mock(org.springframework.data.redis.core.RedisTemplate.class);
 
-        VNPayIpnHandler ipnHandler = new VNPayIpnHandler(vnPayProvider, orderService);
+        VNPayIpnHandler ipnHandler = new VNPayIpnHandler(vnPayProvider, orderService, flashSaleCustomerService, orderDetailRepository, redisTemplate);
         PaymentController paymentController = new PaymentController(ipnHandler, vnPayProvider, properties);
         mockMvc = MockMvcBuilders.standaloneSetup(paymentController).build();
     }

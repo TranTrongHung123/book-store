@@ -43,5 +43,9 @@ public class OrderDetail {
 
     @Column(name = "unit_price", precision = 15, scale = 2)
     private BigDecimal unitPrice;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "flash_sale_item_id")
+    private FlashSaleItem flashSaleItem;
 }
 
