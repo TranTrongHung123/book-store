@@ -19,6 +19,9 @@ public class ReviewResponse {
     @JsonProperty("book_id")
     private Long bookId;
 
+    @JsonProperty("book_title")
+    private String bookTitle;
+
     @JsonProperty("user_id")
     private Long userId;
 

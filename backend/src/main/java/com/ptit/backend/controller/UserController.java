@@ -1,9 +1,11 @@
 package com.ptit.backend.controller;
 
+import com.ptit.backend.dto.request.ChangePasswordRequest;
 import com.ptit.backend.dto.request.UserRequest;
 import com.ptit.backend.dto.response.ApiResponse;
 import com.ptit.backend.dto.response.PagedResponse;
 import com.ptit.backend.dto.response.UserResponse;
+import com.ptit.backend.service.AuthService;
 import com.ptit.backend.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -12,6 +14,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -30,6 +33,7 @@ public class UserController {
     private static final String SUCCESS_MESSAGE = "Thanh cong";
 
     private final UserService userService;
+    private final AuthService authService;
 
     @GetMapping
     public ResponseEntity<ApiResponse<PagedResponse<UserResponse>>> getUsers(
@@ -65,6 +69,15 @@ public class UserController {
     ) {
         UserResponse result = userService.updateUser(id, request);
         return ResponseEntity.ok(success(result));
+    }
+
+    @PatchMapping("/me/password")
+    public ResponseEntity<ApiResponse<Object>> changePassword(
+            Authentication authentication,
+            @Valid @RequestBody ChangePasswordRequest request
+    ) {
+        authService.changePassword(authentication, request);
+        return ResponseEntity.ok(success(null));
     }
 
     @DeleteMapping("/{id}")

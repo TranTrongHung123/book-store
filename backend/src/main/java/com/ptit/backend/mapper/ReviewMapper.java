@@ -21,6 +21,7 @@ public interface ReviewMapper {
 
     @Mapping(source = "reviewId", target = "id")
     @Mapping(source = "book.bookId", target = "bookId")
+    @Mapping(source = "book.title", target = "bookTitle")
     @Mapping(source = "user.userId", target = "userId")
     @Mapping(source = "user.fullName", target = "userName")
     ReviewResponse toResponse(Review entity);

@@ -3,6 +3,7 @@ package com.ptit.backend.service.impl;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseAuthException;
 import com.google.firebase.auth.FirebaseToken;
+import com.ptit.backend.dto.request.ChangePasswordRequest;
 import com.ptit.backend.dto.request.LoginRequest;
 import com.ptit.backend.dto.request.RegisterRequest;
 import com.ptit.backend.dto.request.UserRequest;
@@ -137,6 +138,28 @@ public class AuthServiceImpl implements AuthService {
                 .build();
 
         return userService.createUser(createRequest);
+    }
+
+    @Override
+    @Transactional
+    public void changePassword(Authentication authentication, ChangePasswordRequest request) {
+        User user = resolveAuthenticatedUser(authentication);
+
+        if (!StringUtils.hasText(request.getCurrentPassword())) {
+            throw new AppException(ErrorCode.INVALID_REQUEST, "Mat khau hien tai khong duoc de trong");
+        }
+        if (!StringUtils.hasText(request.getNewPassword())) {
+            throw new AppException(ErrorCode.INVALID_REQUEST, "Mat khau moi khong duoc de trong");
+        }
+        if (request.getNewPassword().length() < 6 || request.getNewPassword().length() > 255) {
+            throw new AppException(ErrorCode.INVALID_REQUEST, "Mat khau moi phai tu 6 den 255 ky tu");
+        }
+        if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
+            throw new AppException(ErrorCode.INVALID_CREDENTIALS, "Mat khau hien tai khong dung");
+        }
+
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
     }
 
     private FirebaseToken verifyFirebaseIdToken(String firebaseIdToken) {

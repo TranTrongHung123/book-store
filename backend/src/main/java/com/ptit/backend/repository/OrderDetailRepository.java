@@ -17,5 +17,18 @@ public interface OrderDetailRepository extends JpaRepository<OrderDetail, Long> 
 
 	@Query("SELECT CASE WHEN COUNT(od) > 0 THEN true ELSE false END FROM OrderDetail od WHERE od.order.orderId = :orderId AND od.flashSaleItem IS NOT NULL")
 	boolean existsFlashSaleItemByOrderId(@Param("orderId") Long orderId);
+
+	@Query("""
+		SELECT CASE WHEN COUNT(od) > 0 THEN true ELSE false END
+		FROM OrderDetail od
+		WHERE od.order.user.userId = :userId
+		  AND od.book.bookId = :bookId
+		  AND lower(od.order.orderStatus) IN :completedStatuses
+		""")
+	boolean existsCompletedPurchase(
+			@Param("userId") Long userId,
+			@Param("bookId") Long bookId,
+			@Param("completedStatuses") List<String> completedStatuses
+	);
 }
 
