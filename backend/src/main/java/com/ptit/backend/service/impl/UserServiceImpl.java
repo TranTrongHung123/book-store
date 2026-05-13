@@ -28,8 +28,10 @@ public class UserServiceImpl implements UserService {
     private final PasswordEncoder passwordEncoder;
 
     @Override
-    public Page<UserResponse> getUsers(Pageable pageable) {
-        return userRepository.findAll(pageable).map(userMapper::toResponse);
+    public Page<UserResponse> getUsers(Long roleId, Integer status, String keyword, Pageable pageable) {
+        String normalizedKeyword = StringUtils.hasText(keyword) ? keyword.trim() : null;
+        return userRepository.searchUsers(roleId, status, normalizedKeyword, pageable)
+                .map(userMapper::toResponse);
     }
 
     @Override
@@ -56,6 +58,9 @@ public class UserServiceImpl implements UserService {
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         if (user.getTotalPoints() == null) {
             user.setTotalPoints(0);
+        }
+        if (user.getStatus() == null) {
+            user.setStatus(1);
         }
 
         User savedUser = userRepository.save(user);

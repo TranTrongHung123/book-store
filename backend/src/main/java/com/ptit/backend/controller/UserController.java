@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -41,10 +42,12 @@ public class UserController {
             @RequestParam(name = "_limit", defaultValue = "10") int limit,
             @RequestParam(name = "_sort", defaultValue = "userId") String sort,
             @RequestParam(name = "_order", defaultValue = "asc") String order,
-            @RequestParam(name = "q", required = false) String q
+            @RequestParam(name = "q", required = false) String q,
+            @RequestParam(name = "role_id", required = false) Long roleId,
+            @RequestParam(name = "status", required = false) Integer status
     ) {
         Pageable pageable = buildPageable(page, limit, sort, order);
-        Page<UserResponse> result = userService.getUsers(pageable);
+        Page<UserResponse> result = userService.getUsers(roleId, status, q, pageable);
 
         ApiResponse<PagedResponse<UserResponse>> response = ApiResponse.<PagedResponse<UserResponse>>builder()
                 .code(SUCCESS_CODE)
@@ -61,6 +64,13 @@ public class UserController {
         return ResponseEntity.ok(success(result));
     }
 
+    @PostMapping
+    public ResponseEntity<ApiResponse<UserResponse>> createUser(
+            @Valid @RequestBody UserRequest request
+    ) {
+        UserResponse result = userService.createUser(request);
+        return ResponseEntity.ok(success(result));
+    }
 
     @PatchMapping("/{id}")
     public ResponseEntity<ApiResponse<UserResponse>> updateUser(

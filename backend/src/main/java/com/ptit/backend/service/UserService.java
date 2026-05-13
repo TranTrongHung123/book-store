@@ -7,7 +7,7 @@ import org.springframework.data.domain.Pageable;
 
 public interface UserService {
 
-    Page<UserResponse> getUsers(Pageable pageable);
+    Page<UserResponse> getUsers(Long roleId, Integer status, String keyword, Pageable pageable);
 
     UserResponse getUserById(Long id);
 
