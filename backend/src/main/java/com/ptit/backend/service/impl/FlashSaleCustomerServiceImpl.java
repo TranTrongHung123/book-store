@@ -50,8 +50,8 @@ public class FlashSaleCustomerServiceImpl implements FlashSaleCustomerService {
     private static final String PAYMENT_STATUS_UNPAID = "Chưa thanh toán";
     private static final String PAYMENT_STATUS_PAID = "Đã thanh toán";
     private static final String PAYMENT_STATUS_FAILED = "Thanh toán thất bại";
-    private static final String ORDER_STATUS_PENDING = "Cho duyet";
-    private static final String ORDER_STATUS_SHIPPING = "Đang giao";
+    private static final String ORDER_STATUS_PENDING = "Chờ duyệt";
+    private static final String ORDER_STATUS_WAITING_DELIVERY = "Chờ giao hàng";
     private static final String ORDER_STATUS_CANCELLED = "Đã hủy";
     private static final String TXN_STATUS_PENDING = "PENDING";
 
@@ -323,7 +323,7 @@ public class FlashSaleCustomerServiceImpl implements FlashSaleCustomerService {
         Order order = orderRepository.findById(orderId).orElse(null);
         if (order != null) {
             order.setPaymentStatus(PAYMENT_STATUS_PAID);
-            order.setOrderStatus(ORDER_STATUS_SHIPPING);
+            order.setOrderStatus(ORDER_STATUS_WAITING_DELIVERY);
             orderRepository.save(order);
         }
 

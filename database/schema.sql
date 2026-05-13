@@ -203,7 +203,7 @@ CREATE TABLE `orders`
     `shipping_address`          TEXT COMMENT 'Địa chỉ giao hàng thực tế',
     `payment_method`            VARCHAR(50) COMMENT 'Cách trả tiền (Tiền mặt, Chuyển khoản...)',
     `payment_status`            VARCHAR(50) COMMENT 'Trạng thái (Chưa thanh toán, Đã thanh toán)',
-    `order_status`              VARCHAR(50) COMMENT 'Trạng thái đơn (Chờ duyệt, Đang giao, Thành công)',
+    `order_status`              VARCHAR(50) COMMENT 'Trạng thái đơn (Chờ duyệt, Đã duyệt, Chờ giao hàng, Đã hủy)',
     `created_at`                TIMESTAMP      DEFAULT CURRENT_TIMESTAMP COMMENT 'Thời điểm khách đặt hàng',
     `updated_at`                TIMESTAMP      DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Thời gian cập nhật cuối',
     FOREIGN KEY (`user_id`) REFERENCES `user` (`user_id`),

@@ -656,16 +656,16 @@ VALUES (1, 1, 1, 1),
 INSERT INTO `orders`
 (`order_id`, `user_id`, `promotion_id`, `points_used`, `promotion_discount_amount`, `point_discount_amount`, `total_amount`, `shipping_address`, `payment_method`, `payment_status`, `order_status`)
 VALUES (1, 4, 1, 10, 15000, 10000, 143000, 'Cầu Giấy, Hà Nội', 'COD', 'Chưa thanh toán', 'Chờ duyệt'),
-       (2, 5, 3, 0, 20000, 0, 125000, 'Hai Bà Trưng, Hà Nội', 'VNPAY', 'Đã thanh toán', 'Đang giao'),
-       (3, 6, NULL, 20, 0, 20000, 78000, 'Đống Đa, Hà Nội', 'MOMO', 'Đã thanh toán', 'Thành công'),
-       (4, 7, 5, 50, 50000, 50000, 250000, 'Thanh Xuân, Hà Nội', 'Banking', 'Đã thanh toán', 'Thành công'),
+       (2, 5, 3, 0, 20000, 0, 125000, 'Hai Bà Trưng, Hà Nội', 'VNPAY', 'Đã thanh toán', 'Chờ giao hàng'),
+       (3, 6, NULL, 20, 0, 20000, 78000, 'Đống Đa, Hà Nội', 'MOMO', 'Đã thanh toán', 'Chờ giao hàng'),
+       (4, 7, 5, 50, 50000, 50000, 250000, 'Thanh Xuân, Hà Nội', 'Banking', 'Đã thanh toán', 'Chờ giao hàng'),
        (5, 8, 9, 0, 10000, 0, 95000, 'Long Biên, Hà Nội', 'COD', 'Chưa thanh toán', 'Chờ duyệt'),
-       (6, 9, 4, 5, 5000, 5000, 126000, 'Nam Từ Liêm, Hà Nội', 'MOMO', 'Đã thanh toán', 'Thành công'),
-       (7, 10, NULL, 0, 0, 0, 145000, 'Hà Đông, Hà Nội', 'COD', 'Chưa thanh toán', 'Đang giao'),
-       (8, 4, 7, 10, 12000, 10000, 113000, 'Cầu Giấy, Hà Nội', 'VNPAY', 'Đã thanh toán', 'Thành công'),
-       (9, 5, 2, 0, 30000, 0, 200000, 'Hai Bà Trưng, Hà Nội', 'Banking', 'Đã thanh toán', 'Đã giao'),
+       (6, 9, 4, 5, 5000, 5000, 126000, 'Nam Từ Liêm, Hà Nội', 'MOMO', 'Đã thanh toán', 'Chờ giao hàng'),
+       (7, 10, NULL, 0, 0, 0, 145000, 'Hà Đông, Hà Nội', 'COD', 'Chưa thanh toán', 'Đã duyệt'),
+       (8, 4, 7, 10, 12000, 10000, 113000, 'Cầu Giấy, Hà Nội', 'VNPAY', 'Đã thanh toán', 'Chờ giao hàng'),
+       (9, 5, 2, 0, 30000, 0, 200000, 'Hai Bà Trưng, Hà Nội', 'Banking', 'Đã thanh toán', 'Chờ giao hàng'),
        (10, 6, 10, 0, 5000, 0, 63000, 'Đống Đa, Hà Nội', 'COD', 'Chưa thanh toán', 'Chờ duyệt'),
-       (11, 11, 1, 0, 18000, 0, 162000, 'Ba Đình, Hà Nội', 'VNPAY', 'Đã thanh toán', 'Đang xử lý'),
+       (11, 11, 1, 0, 18000, 0, 162000, 'Ba Đình, Hà Nội', 'VNPAY', 'Đã thanh toán', 'Chờ giao hàng'),
        (12, 12, NULL, 0, 0, 0, 99000, 'Tân Bình, TP. Hồ Chí Minh', 'COD', 'Chưa thanh toán', 'Đã hủy');
 
 -- =========================================================

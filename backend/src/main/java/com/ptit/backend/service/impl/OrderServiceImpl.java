@@ -46,12 +46,15 @@ public class OrderServiceImpl implements OrderService {
 
     private static final BigDecimal ZERO = BigDecimal.ZERO;
     private static final BigDecimal POINTS_DIVISOR = new BigDecimal("10000");
+    private static final String PAYMENT_METHOD_COD = "COD";
     private static final String PAYMENT_METHOD_VNPAY = "VNPAY";
     private static final String PAYMENT_STATUS_UNPAID = "Chưa thanh toán";
     private static final String PAYMENT_STATUS_PAID = "Đã thanh toán";
     private static final String PAYMENT_STATUS_FAILED = "Thanh toán thất bại";
-    private static final String ORDER_STATUS_PENDING = "Cho duyet";
-    private static final String ORDER_STATUS_SHIPPING = "Đang giao";
+    private static final String ORDER_STATUS_PENDING = "Chờ duyệt";
+    private static final String ORDER_STATUS_PENDING_LEGACY = "Cho duyet";
+    private static final String ORDER_STATUS_APPROVED = "Đã duyệt";
+    private static final String ORDER_STATUS_WAITING_DELIVERY = "Chờ giao hàng";
     private static final String ORDER_STATUS_CANCELLED = "Đã hủy";
     private static final String PAYMENT_PROVIDER_VNPAY = "VNPAY";
     private static final String TXN_STATUS_SUCCESS = "SUCCESS";
@@ -100,13 +103,7 @@ public class OrderServiceImpl implements OrderService {
         Order order = orderMapper.toEntity(request);
         order.setUser(user);
         order.setCreatedAt(request.getOrderDate() != null ? request.getOrderDate() : LocalDateTime.now());
-
-        if (request.getOrderStatus() == null) {
-            order.setOrderStatus(ORDER_STATUS_PENDING);
-        }
-        if (request.getPaymentStatus() == null) {
-            order.setPaymentStatus(PAYMENT_STATUS_UNPAID);
-        }
+        applyInitialPaymentState(order);
 
         BigDecimal subTotal = ZERO;
         List<OrderDetail> orderDetails = new ArrayList<>();
@@ -239,7 +236,7 @@ public class OrderServiceImpl implements OrderService {
         if ("00".equals(responseCode)) {
             log.info("[OrderService] Giao dịch thành công cho đơn hàng: {}", orderId);
             order.setPaymentStatus(PAYMENT_STATUS_PAID);
-            order.setOrderStatus(ORDER_STATUS_SHIPPING);
+            order.setOrderStatus(ORDER_STATUS_WAITING_DELIVERY);
             paymentTransaction.setStatus(TXN_STATUS_SUCCESS);
         } else {
             log.warn("[OrderService] Giao dịch thất bại (Mã lỗi từ VNPay: {}) cho đơn hàng: {}", responseCode, orderId);
@@ -268,12 +265,42 @@ public class OrderServiceImpl implements OrderService {
         Order order = orderRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
 
-        if (request.getOrderStatus() != null) {
-            order.setOrderStatus(request.getOrderStatus());
-        }
         if (request.getPaymentStatus() != null) {
-            order.setPaymentStatus(request.getPaymentStatus());
+            throw new AppException(ErrorCode.FORBIDDEN,
+                    "Nhan vien khong duoc cap nhat trang thai thanh toan cua don hang.");
         }
+
+        if (request.getOrderStatus() == null || request.getOrderStatus().isBlank()) {
+            throw new AppException(ErrorCode.INVALID_REQUEST, "Truong order_status la bat buoc");
+        }
+
+        if (ORDER_STATUS_CANCELLED.equalsIgnoreCase(order.getOrderStatus())
+                || PAYMENT_STATUS_FAILED.equalsIgnoreCase(order.getPaymentStatus())) {
+            throw new AppException(ErrorCode.FORBIDDEN,
+                    "Don hang da huy hoac thanh toan that bai khong duoc cap nhat trang thai.");
+        }
+
+        if (PAYMENT_METHOD_VNPAY.equalsIgnoreCase(order.getPaymentMethod())) {
+            throw new AppException(ErrorCode.FORBIDDEN,
+                    "Don hang thanh toan VNPay thanh cong se o trang thai Cho giao hang va nhan vien khong duoc sua trang thai.");
+        }
+
+        if (!PAYMENT_METHOD_COD.equalsIgnoreCase(order.getPaymentMethod())) {
+            throw new AppException(ErrorCode.FORBIDDEN,
+                    "Chi don hang COD moi duoc nhan vien duyet.");
+        }
+
+        if (!isPendingApproval(order.getOrderStatus())) {
+            throw new AppException(ErrorCode.FORBIDDEN,
+                    "Chi don hang COD dang cho duyet moi duoc chuyen sang da duyet.");
+        }
+
+        if (!ORDER_STATUS_APPROVED.equalsIgnoreCase(request.getOrderStatus())) {
+            throw new AppException(ErrorCode.INVALID_REQUEST,
+                    "Nhan vien chi duoc chuyen don COD tu Cho duyet sang Da duyet.");
+        }
+
+        order.setOrderStatus(ORDER_STATUS_APPROVED);
 
         Order updatedOrder = orderRepository.save(order);
         return buildOrderResponse(updatedOrder);
@@ -290,14 +317,13 @@ public class OrderServiceImpl implements OrderService {
             throw new AppException(ErrorCode.FORBIDDEN, "Ban khong co quyen huy don hang nay");
         }
 
-        // Check status (only allow cancelling if pending/dang xu ly)
+        // Check status (only allow cancelling if pending approval)
         String currentStatus = order.getOrderStatus();
-        boolean isPending = ORDER_STATUS_PENDING.equalsIgnoreCase(currentStatus)
-                || "Đang xử lý".equalsIgnoreCase(currentStatus);
+        boolean isPending = isPendingApproval(currentStatus);
 
         if (!isPending) {
             throw new AppException(ErrorCode.ORDER_CANNOT_BE_CANCELLED,
-                "Chi co the huy don hang khi dang o trang thai cho duyet hoac dang xu ly.");
+                "Chi co the huy don hang khi dang o trang thai cho duyet.");
         }
 
         // Restore stock
@@ -342,6 +368,20 @@ public class OrderServiceImpl implements OrderService {
         }
 
         throw new AppException(ErrorCode.ORDER_ITEM_INVALID, "Moi san pham phai co book_id hoac book_item_id");
+    }
+
+    private void applyInitialPaymentState(Order order) {
+        if (order.getPaymentMethod() == null || order.getPaymentMethod().isBlank()) {
+            order.setPaymentMethod(PAYMENT_METHOD_COD);
+        }
+
+        order.setPaymentStatus(PAYMENT_STATUS_UNPAID);
+        order.setOrderStatus(ORDER_STATUS_PENDING);
+    }
+
+    private boolean isPendingApproval(String status) {
+        return ORDER_STATUS_PENDING.equalsIgnoreCase(status)
+                || ORDER_STATUS_PENDING_LEGACY.equalsIgnoreCase(status);
     }
 
     private void validatePromotion(Promotion promotion, BigDecimal subTotal) {
