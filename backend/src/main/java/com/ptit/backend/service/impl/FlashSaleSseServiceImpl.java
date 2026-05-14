@@ -13,7 +13,7 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 @Service
 public class FlashSaleSseServiceImpl implements FlashSaleSseService {
 
-    private static final long SSE_TIMEOUT = 5 * 60 * 1000L; // 5 minutes
+    private static final long SSE_TIMEOUT = 5 * 60 * 1000L; // 5 phút
 
     private final List<SseEmitter> emitters = new CopyOnWriteArrayList<>();
 
@@ -32,7 +32,7 @@ public class FlashSaleSseServiceImpl implements FlashSaleSseService {
             emitter.completeWithError(e);
         });
 
-        // Send initial connection event
+        // Gửi sự kiện kết nối ban đầu
         try {
             emitter.send(SseEmitter.event()
                     .name("connected")

@@ -173,7 +173,7 @@ public class OrderServiceImpl implements OrderService {
 
         // [THÊM MỚI] - 2. Xử lý logic sinh Link VNPay
         if (PAYMENT_METHOD_VNPAY.equalsIgnoreCase(request.getPaymentMethod())) {
-            // vnPayProvider là class bạn Inject vào Service để tạo URL (như các trao đổi trước)
+            // vnPayProvider là class inject vào service để tạo URL
             // Truyền savedOrder vào để lấy được ID đơn hàng (TxnRef) và Tổng tiền (Amount)
             String paymentUrl = vnPayProvider.createPaymentUrl(savedOrder, httpServletRequest);
 
@@ -218,6 +218,12 @@ public class OrderServiceImpl implements OrderService {
             throw new BusinessException(BusinessException.ErrorCode.ORDER_ALREADY_CONFIRMED);
         }
 
+        if (ORDER_STATUS_CANCELLED.equals(order.getOrderStatus())
+                || PAYMENT_STATUS_FAILED.equals(order.getPaymentStatus())) {
+            log.warn("[OrderService] Đơn hàng {} đã bị hủy/thất bại. Không xác nhận thanh toán lại.", orderId);
+            throw new BusinessException(BusinessException.ErrorCode.ORDER_ALREADY_CONFIRMED);
+        }
+
         if (transactionNo != null && !transactionNo.isBlank()
                 && paymentTransactionRepository.findByProviderTransactionId(transactionNo).isPresent()) {
             log.warn("[OrderService] Giao dịch VNPay {} đã được xử lý trước đó.", transactionNo);
@@ -245,7 +251,7 @@ public class OrderServiceImpl implements OrderService {
 
             for (OrderDetail detail : orderDetails) {
                 Book book = detail.getBook();
-                // Giảm stock: availableStock -= quantity
+                // Giảm tồn kho: availableStock -= quantity
                 book.setTotalStock(book.getTotalStock() + detail.getQuantity());
                 bookRepository.save(book);
             }
@@ -312,12 +318,12 @@ public class OrderServiceImpl implements OrderService {
         Order order = orderRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
 
-        // Check ownership
+        // Kiểm tra chủ đơn
         if (!order.getUser().getUserId().equals(userId)) {
             throw new AppException(ErrorCode.FORBIDDEN, "Ban khong co quyen huy don hang nay");
         }
 
-        // Check status (only allow cancelling if pending approval)
+        // Chỉ cho hủy khi đơn đang chờ duyệt
         String currentStatus = order.getOrderStatus();
         boolean isPending = isPendingApproval(currentStatus);
 
@@ -326,13 +332,13 @@ public class OrderServiceImpl implements OrderService {
                 "Chi co the huy don hang khi dang o trang thai cho duyet.");
         }
 
-        // Restore stock
+        // Hoàn lại tồn kho
         List<OrderDetail> details = orderDetailRepository.findByOrderOrderId(id);
         for (OrderDetail detail : details) {
             bookRepository.increaseStock(detail.getBook().getBookId(), detail.getQuantity());
         }
 
-        // Update status
+        // Cập nhật trạng thái
         order.setOrderStatus(ORDER_STATUS_CANCELLED);
         Order savedOrder = orderRepository.save(order);
 

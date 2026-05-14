@@ -124,8 +124,8 @@ public class FlashSaleStockRedisServiceImpl implements FlashSaleStockRedisServic
 
     @Override
     public void commitUserPurchase(Long flashSaleItemId, Long userId) {
-        // User count stays in Redis — already incremented during reservation.
-        // On commit, we just keep it so user can't buy more.
+        // Giữ số lượng của người dùng trong Redis vì đã tăng lúc giữ hàng.
+        // Khi xác nhận thì giữ nguyên để không mua quá giới hạn.
         log.info("[Redis] Committed user purchase item={}, user={}", flashSaleItemId, userId);
     }
 

@@ -19,4 +19,6 @@ public interface FlashSaleCustomerService {
     void commitReservation(String reservationId);
 
     void cancelReservation(String reservationId);
+
+    void cancelReservation(String reservationId, Long userId);
 }

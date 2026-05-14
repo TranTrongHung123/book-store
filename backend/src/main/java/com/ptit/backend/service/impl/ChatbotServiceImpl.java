@@ -55,11 +55,11 @@ public class ChatbotServiceImpl implements ChatbotService {
     @Value("${chatbot.memory.max-messages:20}")
     private int maxMessages;
 
-    /** Số tin nhắn gần nhất load vào history khi restore session */
+    /** Số tin nhắn gần nhất nạp vào lịch sử khi khôi phục session */
     @Value("${chatbot.history.load-last-n:10}")
     private int historyLoadLastN;
 
-    // ─── Session Management ───────────────────────────────────────────────────
+    // ─── Quản lý session ─────────────────────────────────────────────────────
 
     @Override
     @Transactional
@@ -107,12 +107,12 @@ public class ChatbotServiceImpl implements ChatbotService {
         log.info("Đóng session: {}", sessionId);
     }
 
-    // ─── Chat Core ────────────────────────────────────────────────────────────
+    // ─── Luồng chat chính ────────────────────────────────────────────────────
 
     @Override
     @Transactional
     public ChatbotResponse chat(ChatRequest request, Long userId) {
-        // 1. Validate session
+        // 1. Kiểm tra session
         ChatSession session = chatSessionRepository.findById(request.sessionId())
                 .orElseThrow(() -> new AppException(ErrorCode.CHATBOT_SESSION_NOT_FOUND));
 
@@ -120,7 +120,7 @@ public class ChatbotServiceImpl implements ChatbotService {
             throw new AppException(ErrorCode.CHATBOT_SESSION_NOT_FOUND);
         }
 
-        // 2. Gắn userId vào session nếu user vừa đăng nhập nhưng session chưa có user
+        // 2. Gắn userId vào session nếu người dùng vừa đăng nhập
         if (userId != null && session.getUser() == null) {
             userRepository.findById(userId).ifPresent(session::setUser);
             chatSessionRepository.save(session);
@@ -131,29 +131,29 @@ public class ChatbotServiceImpl implements ChatbotService {
 
         log.debug("Chat [session={}]: {}", conversationId, userMessage);
 
-        // 3. RAG: Tìm context từ MySQL FULLTEXT search (book + author)
+        // 3. RAG: tìm context bằng FULLTEXT trong MySQL
         String ragContext = ragSearchService.buildContextPayload(userMessage);
 
-        // 4. Load N tin nhắn gần nhất từ lịch sử hội thoại
+        // 4. Nạp N tin nhắn gần nhất từ lịch sử hội thoại
         List<Message> history = chatMemory.get(conversationId);
 
-        // 5. Gọi Gemini với structured output
+        // 5. Gọi Gemini với output theo schema
         ChatbotResponse aiResponse = callGeminiWithStructuredOutput(
                 systemPromptBuilder.build(ragContext),
                 userMessage,
                 history
         );
 
-        // 6. Persist tin nhắn USER vào DB
+        // 6. Lưu tin nhắn USER vào DB
         saveMessage(session, "USER", userMessage);
 
-        // 7. Persist tin nhắn BOT (lưu answer text)
+        // 7. Lưu tin nhắn BOT
         String botAnswer = (aiResponse.getAnswer() != null && !aiResponse.getAnswer().isBlank())
                 ? aiResponse.getAnswer()
                 : "Tôi xin lỗi, hiện tại tôi không thể trả lời. Vui lòng thử lại.";
         saveMessage(session, "BOT", botAnswer);
 
-        // 8. Auto-truncate: xóa các tin nhắn cũ nếu vượt quá giới hạn
+        // 8. Tự cắt bớt nếu vượt quá giới hạn
         autoTruncateHistory(session.getSessionId());
 
         return aiResponse;
@@ -234,7 +234,7 @@ public class ChatbotServiceImpl implements ChatbotService {
         throw new AppException(ErrorCode.CHATBOT_AI_UNAVAILABLE);
     }
 
-    // ─── History ──────────────────────────────────────────────────────────────
+    // ─── Lịch sử chat ────────────────────────────────────────────────────────
 
     @Override
     @Transactional(readOnly = true)
@@ -243,7 +243,7 @@ public class ChatbotServiceImpl implements ChatbotService {
             throw new AppException(ErrorCode.CHATBOT_SESSION_NOT_FOUND);
         }
 
-        // Chỉ load N tin nhắn gần nhất để tránh trả về quá nhiều
+        // Chỉ nạp N tin nhắn gần nhất để tránh trả về quá nhiều
         PageRequest pageRequest = PageRequest.of(0, historyLoadLastN,
                 Sort.by(Sort.Direction.DESC, "createdAt"));
 
@@ -261,7 +261,7 @@ public class ChatbotServiceImpl implements ChatbotService {
                 .collect(Collectors.toList());
     }
 
-    // ─── Private helpers ──────────────────────────────────────────────────────
+    // ─── Hàm phụ trợ ─────────────────────────────────────────────────────────
 
     private ChatSessionResponse buildSessionResponse(ChatSession session) {
         return ChatSessionResponse.builder()

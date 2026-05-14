@@ -14,23 +14,23 @@ import org.springframework.transaction.annotation.Transactional;
 public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> {
 
     /**
-     * Load N tin nhắn gần nhất của session
+     * Nạp N tin nhắn gần nhất của session.
      */
     @Query("SELECT m FROM ChatMessage m WHERE m.session.sessionId = :sessionId ORDER BY m.createdAt DESC")
     List<ChatMessage> findTopNBySessionId(@Param("sessionId") Long sessionId, Pageable pageable);
 
     /**
-     * Load toàn bộ lịch sử hội thoại của session theo thứ tự thời gian
+     * Nạp toàn bộ lịch sử hội thoại của session theo thứ tự thời gian.
      */
     List<ChatMessage> findBySessionSessionIdOrderByCreatedAtAsc(Long sessionId);
 
     /**
-     * Đếm tổng số tin nhắn trong session — dùng để quyết định có cần truncate không
+     * Đếm tổng số tin nhắn trong session để biết có cần cắt bớt không.
      */
     long countBySessionSessionId(Long sessionId);
 
     /**
-     * Xóa N tin nhắn cũ nhất của session (auto-truncation).
+     * Xóa N tin nhắn cũ nhất của session.
      */
     @Query("SELECT c.messageId FROM ChatMessage c WHERE c.session.sessionId = :sessionId ORDER BY c.createdAt ASC")
     List<Long> findOldestMessageIds(@Param("sessionId") Long sessionId, Pageable pageable);

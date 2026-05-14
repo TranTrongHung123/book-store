@@ -5,8 +5,8 @@ import com.ptit.backend.dto.response.IpnResponse;
 import com.ptit.backend.dto.response.VnpIpnResponseConst;
 import com.ptit.backend.exception.BusinessException;
 import com.ptit.backend.repository.OrderDetailRepository;
+import com.ptit.backend.repository.OrderRepository;
 import com.ptit.backend.service.FlashSaleCustomerService;
-import com.ptit.backend.service.FlashSaleStockRedisService;
 import com.ptit.backend.service.OrderService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,11 +25,15 @@ public class VNPayIpnHandler {
     private final OrderService orderService;
     private final FlashSaleCustomerService flashSaleCustomerService;
     private final OrderDetailRepository orderDetailRepository;
+    private final OrderRepository orderRepository;
     private final RedisTemplate<String, String> redisTemplate;
+
+    private static final String PAYMENT_STATUS_FAILED = "Thanh toán thất bại";
+    private static final String ORDER_STATUS_CANCELLED = "Đã hủy";
 
     public IpnResponse process(Map<String, String> params) {
 
-        // 1. Verify signature
+        // 1. Kiểm tra chữ ký
         if (!vnPayProvider.verifyIpn(params)) {
             log.warn("[VNPay IPN] Sai chữ ký bảo mật!");
             return VnpIpnResponseConst.SIGNATURE_FAILED;
@@ -44,14 +48,14 @@ public class VNPayIpnHandler {
             String responseCode = params.get("vnp_ResponseCode");
             String transactionNo = params.get("vnp_TransactionNo");
 
-            // 2. Check if this is a flash sale order
+            // 2. Kiểm tra có phải đơn flash sale không
             boolean isFlashSaleOrder = orderDetailRepository.existsFlashSaleItemByOrderId(orderId);
 
             if (isFlashSaleOrder) {
-                // Handle flash sale order via reservation system
+                // Xử lý đơn flash sale qua reservation
                 handleFlashSalePayment(orderId, responseCode, transactionNo, vnpAmount);
             } else {
-                // Handle normal order via existing flow
+                // Xử lý đơn thường theo luồng cũ
                 orderService.confirmOrderPayment(orderId, vnpAmount, responseCode, transactionNo);
             }
 
@@ -74,16 +78,23 @@ public class VNPayIpnHandler {
     }
 
     /**
-     * Find reservation by orderId and commit or cancel it.
+     * Tìm reservation theo orderId để xác nhận hoặc hủy.
      */
     private void handleFlashSalePayment(long orderId, String responseCode, String transactionNo, long vnpAmount) {
-        // Find reservation by orderId using Redis scan
+        // Tìm reservation theo orderId bằng Redis scan
         String reservationId = findReservationByOrderId(orderId);
 
         if (reservationId == null) {
-            log.warn("[VNPay IPN] No reservation found for flash sale orderId={}. May already be processed.", orderId);
-            // Still process via normal flow as fallback
-            orderService.confirmOrderPayment(orderId, vnpAmount, responseCode, transactionNo);
+            log.warn("[VNPay IPN] No active reservation found for flash sale orderId={}. Do not fallback to normal payment flow.", orderId);
+            orderRepository.findById(orderId).ifPresent(order -> {
+                if (!ORDER_STATUS_CANCELLED.equals(order.getOrderStatus())) {
+                    order.setOrderStatus(ORDER_STATUS_CANCELLED);
+                }
+                if (!PAYMENT_STATUS_FAILED.equals(order.getPaymentStatus())) {
+                    order.setPaymentStatus(PAYMENT_STATUS_FAILED);
+                }
+                orderRepository.save(order);
+            });
             return;
         }
 
@@ -97,7 +108,7 @@ public class VNPayIpnHandler {
     }
 
     /**
-     * Scan Redis for reservation containing this orderId.
+     * Quét Redis để tìm reservation chứa orderId.
      */
     private String findReservationByOrderId(long orderId) {
         Set<String> keys = redisTemplate.keys("flash:reserve:*");
@@ -108,7 +119,7 @@ public class VNPayIpnHandler {
             Map<Object, Object> data = redisTemplate.opsForHash().entries(key);
             String storedOrderId = data.get("orderId") != null ? data.get("orderId").toString() : null;
             if (String.valueOf(orderId).equals(storedOrderId)) {
-                // Extract reservationId from key "flash:reserve:{id}"
+                // Lấy reservationId từ key "flash:reserve:{id}"
                 return key.replace("flash:reserve:", "");
             }
         }

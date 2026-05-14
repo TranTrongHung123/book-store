@@ -16,7 +16,7 @@ public interface ChatSessionRepository extends JpaRepository<ChatSession, Long> 
     Page<ChatSession> findByUserUserId(Long userId, Pageable pageable);
 
     /**
-     * Tìm session ACTIVE của user
+     * Tìm session ACTIVE của người dùng.
      */
     @Query("""
             SELECT s FROM ChatSession s
@@ -27,7 +27,7 @@ public interface ChatSessionRepository extends JpaRepository<ChatSession, Long> 
     List<ChatSession> findActiveSessionsByUserId(@Param("userId") Long userId);
 
     /**
-     * Tìm session mới nhất của user
+     * Tìm session mới nhất của người dùng.
      */
     Optional<ChatSession> findTopByUserUserIdOrderByStartedAtDesc(Long userId);
 }

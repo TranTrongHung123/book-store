@@ -28,12 +28,12 @@ public class MySQLChatMemory implements ChatMemory {
     private final ChatMessageRepository chatMessageRepository;
     private final ChatSessionRepository chatSessionRepository;
 
-    /** Số tin nhắn gần nhất nạp vào context AI (tương ứng chatbot.memory.max-messages) */
+    /** Số tin nhắn gần nhất nạp vào context AI */
     @Value("${chatbot.memory.max-messages:20}")
     private int memoryMaxMessages;
 
     /**
-     * Lưu danh sách messages vào DB.
+     * Lưu danh sách tin nhắn vào DB.
      */
     @Override
     @Transactional
@@ -67,7 +67,7 @@ public class MySQLChatMemory implements ChatMemory {
     }
 
     /**
-     * Load N tin nhắn gần nhất của một session theo thứ tự thời gian
+     * Nạp N tin nhắn gần nhất của một session theo thứ tự thời gian.
      */
     @Override
     @Transactional(readOnly = true)

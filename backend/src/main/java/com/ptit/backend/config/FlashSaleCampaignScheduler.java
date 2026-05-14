@@ -15,9 +15,9 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Automatically activates/deactivates flash sale campaigns based on start_time/end_time.
- * When a campaign activates, its stock is loaded into Redis.
- * When a campaign ends, Redis keys are cleaned up and sold_quantity is synced back.
+ * Tự bật/tắt chiến dịch flash sale theo start_time/end_time.
+ * Khi chiến dịch bắt đầu, tồn kho được nạp vào Redis.
+ * Khi chiến dịch kết thúc, dọn Redis và đồng bộ sold_quantity.
  */
 @Slf4j
 @Component
@@ -30,7 +30,7 @@ public class FlashSaleCampaignScheduler {
     private final FlashSaleStockRedisService redisService;
 
     /**
-     * Runs every 30 seconds to check campaign status transitions.
+     * Chạy mỗi 30 giây để kiểm tra chuyển trạng thái chiến dịch.
      */
     @Scheduled(fixedDelay = 30000)
     @Transactional
@@ -42,10 +42,10 @@ public class FlashSaleCampaignScheduler {
             String currentStatus = campaign.getStatus();
 
             if ("UPCOMING".equals(currentStatus) && !now.isBefore(campaign.getStartTime())) {
-                // Transition: UPCOMING -> ACTIVE
+                // Chuyển trạng thái: UPCOMING -> ACTIVE
                 activateCampaign(campaign);
             } else if ("ACTIVE".equals(currentStatus) && now.isAfter(campaign.getEndTime())) {
-                // Transition: ACTIVE -> ENDED
+                // Chuyển trạng thái: ACTIVE -> ENDED
                 endCampaign(campaign);
             }
         }
@@ -55,7 +55,7 @@ public class FlashSaleCampaignScheduler {
         campaign.setStatus("ACTIVE");
         campaignRepository.save(campaign);
 
-        // Load stock into Redis for each item
+        // Nạp tồn kho từng item vào Redis
         List<FlashSaleItem> items = flashSaleItemRepository.findByCampaignCampaignId(campaign.getCampaignId());
         for (FlashSaleItem item : items) {
             int soldQty = item.getSoldQuantity() != null ? item.getSoldQuantity() : 0;
@@ -71,7 +71,7 @@ public class FlashSaleCampaignScheduler {
         campaign.setStatus("ENDED");
         campaignRepository.save(campaign);
 
-        // Sync final stock back to MySQL and cleanup Redis
+        // Đồng bộ tồn kho cuối về MySQL và dọn Redis
         List<FlashSaleItem> items = flashSaleItemRepository.findByCampaignCampaignId(campaign.getCampaignId());
         List<Long> itemIds = new java.util.ArrayList<>();
 

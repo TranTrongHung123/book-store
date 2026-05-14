@@ -19,6 +19,6 @@ public class FlashSaleMessage implements Serializable {
     private Long orderId;
     private Integer quantity;
 
-    /** Type: CANCEL, ORDER_CONFIRMED */
+    /** Loại message: CANCEL, ORDER_CONFIRMED */
     private String type;
 }

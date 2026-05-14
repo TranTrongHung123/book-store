@@ -8,8 +8,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 /**
- * Internal DTO chứa kết quả truy vấn RAG từ MySQL FULLTEXT search.
- * Được dùng để build context payload cho System Prompt của AI.
+ * DTO nội bộ chứa kết quả RAG từ MySQL FULLTEXT.
+ * Dùng để tạo context cho prompt của AI.
  */
 @Getter
 @Setter

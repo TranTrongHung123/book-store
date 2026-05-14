@@ -69,7 +69,7 @@ public class FlashSaleCustomerServiceImpl implements FlashSaleCustomerService {
     @Value("${flash-sale.reservation-ttl-seconds:300}")
     private int reservationTtlSeconds;
 
-    // ======= GET ACTIVE CAMPAIGNS =======
+    // ======= LẤY CHIẾN DỊCH ĐANG ACTIVE =======
 
     @Override
     public List<FlashSaleActiveResponse> getActiveCampaigns(Long userId) {
@@ -78,7 +78,7 @@ public class FlashSaleCustomerServiceImpl implements FlashSaleCustomerService {
         List<FlashSaleActiveResponse> responses = new ArrayList<>();
 
         for (FlashSaleCampaign campaign : activeCampaigns) {
-            // JIT Activation: If campaign should be active but status is UPCOMING, initialize it
+            // Kích hoạt tại chỗ nếu đã tới giờ nhưng vẫn UPCOMING
             if ("UPCOMING".equals(campaign.getStatus())) {
                 initializeCampaignInRedis(campaign);
             }
@@ -87,7 +87,7 @@ public class FlashSaleCustomerServiceImpl implements FlashSaleCustomerService {
             List<FlashSaleActiveItemResponse> itemResponses = new ArrayList<>();
 
             for (FlashSaleItem item : items) {
-                // Read stock from Redis (not MySQL) during active campaign
+                // Khi đang sale thì đọc tồn kho từ Redis
                 int remainingStock = redisService.getStock(item.getFlashSaleItemId());
                 Book book = item.getBook();
 
@@ -139,12 +139,12 @@ public class FlashSaleCustomerServiceImpl implements FlashSaleCustomerService {
         }
     }
 
-    // ======= RESERVE STOCK =======
+    // ======= GIỮ STOCK =======
 
     @Override
     @Transactional
     public FlashSaleReserveResponse reserveStock(Long userId, FlashSaleReserveRequest request, HttpServletRequest httpRequest) {
-        // 1. Validate flash sale item exists and campaign is active
+        // 1. Kiểm tra item tồn tại và chiến dịch đang mở
         FlashSaleItem flashSaleItem = flashSaleItemRepository.findById(request.getFlashSaleItemId())
                 .orElseThrow(() -> new AppException(ErrorCode.FLASH_SALE_ITEM_NOT_FOUND));
 
@@ -152,7 +152,7 @@ public class FlashSaleCustomerServiceImpl implements FlashSaleCustomerService {
         String status = campaign.getStatus();
         LocalDateTime now = LocalDateTime.now();
 
-        // Check if truly active (either ACTIVE or UPCOMING but it's time)
+        // Kiểm tra có thật sự đang trong thời gian sale không
         boolean isTime = !now.isBefore(campaign.getStartTime()) && !now.isAfter(campaign.getEndTime());
         boolean isActive = "ACTIVE".equals(status);
         boolean isUpcomingButShouldBeActive = "UPCOMING".equals(status) && isTime;
@@ -161,7 +161,7 @@ public class FlashSaleCustomerServiceImpl implements FlashSaleCustomerService {
             throw new AppException(ErrorCode.FLASH_SALE_NOT_ACTIVE);
         }
 
-        // If it's UPCOMING but should be active, init it JIT
+        // Nếu đã tới giờ thì kích hoạt tại chỗ
         if (isUpcomingButShouldBeActive) {
             initializeCampaignInRedis(campaign);
         }
@@ -172,7 +172,7 @@ public class FlashSaleCustomerServiceImpl implements FlashSaleCustomerService {
         int qty = request.getQuantity();
         int maxPerUser = flashSaleItem.getMaxPerUser() != null ? flashSaleItem.getMaxPerUser() : 1;
 
-        // 2. Atomic Redis stock reservation
+        // 2. Giữ tồn kho nguyên tử trong Redis
         long result = redisService.reserveStock(flashSaleItem.getFlashSaleItemId(), userId, qty, maxPerUser);
 
         switch ((int) result) {
@@ -181,7 +181,7 @@ public class FlashSaleCustomerServiceImpl implements FlashSaleCustomerService {
             case -3 -> throw new AppException(ErrorCode.FLASH_SALE_SOLD_OUT);
         }
 
-        // 3. Create Order in MySQL (PENDING status)
+        // 3. Tạo đơn PENDING trong MySQL
         BigDecimal unitPrice = flashSaleItem.getFlashSalePrice();
         BigDecimal totalAmount = unitPrice.multiply(BigDecimal.valueOf(qty));
 
@@ -198,7 +198,7 @@ public class FlashSaleCustomerServiceImpl implements FlashSaleCustomerService {
                 .build();
         Order savedOrder = orderRepository.save(order);
 
-        // 4. Create OrderDetail with flash_sale_item_id
+        // 4. Tạo OrderDetail có flash_sale_item_id
         OrderDetail detail = OrderDetail.builder()
                 .order(savedOrder)
                 .book(flashSaleItem.getBook())
@@ -208,7 +208,7 @@ public class FlashSaleCustomerServiceImpl implements FlashSaleCustomerService {
                 .build();
         orderDetailRepository.save(detail);
 
-        // 5. Create PaymentTransaction (PENDING)
+        // 5. Tạo PaymentTransaction PENDING
         PaymentTransaction paymentTxn = PaymentTransaction.builder()
                 .order(savedOrder)
                 .provider("VNPAY")
@@ -217,10 +217,10 @@ public class FlashSaleCustomerServiceImpl implements FlashSaleCustomerService {
                 .build();
         paymentTransactionRepository.save(paymentTxn);
 
-        // 6. Generate VNPay URL
+        // 6. Tạo URL VNPay
         String paymentUrl = vnPayProvider.createPaymentUrl(savedOrder, httpRequest);
 
-        // 7. Store reservation in Redis with TTL
+        // 7. Lưu lượt giữ hàng vào Redis kèm TTL
         String reservationId = UUID.randomUUID().toString();
         Map<String, String> reservationData = new HashMap<>();
         reservationData.put("userId", userId.toString());
@@ -230,7 +230,7 @@ public class FlashSaleCustomerServiceImpl implements FlashSaleCustomerService {
         reservationData.put("paymentUrl", paymentUrl);
         redisService.setReservation(reservationId, reservationData, reservationTtlSeconds);
 
-        // 8. Publish delayed cancel to RabbitMQ
+        // 8. Gửi message hủy trễ vào RabbitMQ
         FlashSaleMessage cancelMessage = FlashSaleMessage.builder()
                 .reservationId(reservationId)
                 .flashSaleItemId(flashSaleItem.getFlashSaleItemId())
@@ -241,7 +241,7 @@ public class FlashSaleCustomerServiceImpl implements FlashSaleCustomerService {
                 .build();
         messagePublisher.publishDelayedCancel(cancelMessage, reservationTtlSeconds * 1000L);
 
-        // 9. Broadcast stock update via SSE
+        // 9. Bắn cập nhật tồn kho qua SSE
         int newStock = redisService.getStock(flashSaleItem.getFlashSaleItemId());
         sseService.broadcastStockUpdate(flashSaleItem.getFlashSaleItemId(), newStock, newStock <= 0);
 
@@ -259,15 +259,14 @@ public class FlashSaleCustomerServiceImpl implements FlashSaleCustomerService {
                 .build();
     }
 
-    // ======= GET RESERVATION STATUS =======
+    // ======= LẤY TRẠNG THÁI RESERVATION =======
 
     @Override
     public FlashSaleReservationStatusResponse getReservationStatus(String reservationId, Long userId) {
         Map<String, String> data = redisService.getReservation(reservationId);
 
         if (data.isEmpty()) {
-            // Check if order exists and its status
-            // Reservation expired or was committed
+            // Reservation đã hết hạn hoặc đã xử lý
             return FlashSaleReservationStatusResponse.builder()
                     .reservationId(reservationId)
                     .status("EXPIRED")
@@ -283,7 +282,7 @@ public class FlashSaleCustomerServiceImpl implements FlashSaleCustomerService {
         long ttl = redisService.getReservationTtl(reservationId);
         Long orderId = Long.parseLong(data.get("orderId"));
 
-        // Check if order already paid
+        // Kiểm tra đơn đã thanh toán chưa
         Order order = orderRepository.findById(orderId).orElse(null);
         String status = "PENDING";
         if (order != null && PAYMENT_STATUS_PAID.equals(order.getPaymentStatus())) {
@@ -299,7 +298,7 @@ public class FlashSaleCustomerServiceImpl implements FlashSaleCustomerService {
                 .build();
     }
 
-    // ======= COMMIT RESERVATION (after VNPay success) =======
+    // ======= XÁC NHẬN RESERVATION SAU KHI VNPay THÀNH CÔNG =======
 
     @Override
     @Transactional
@@ -307,7 +306,7 @@ public class FlashSaleCustomerServiceImpl implements FlashSaleCustomerService {
         Map<String, String> data = redisService.getReservation(reservationId);
         if (data.isEmpty()) {
             log.warn("[FlashSale] Commit called but reservation={} not found (already committed or expired)", reservationId);
-            return; // Idempotent — already processed
+            return; // Đã xử lý trước đó
         }
 
         Long flashSaleItemId = Long.parseLong(data.get("flashSaleItemId"));
@@ -315,11 +314,11 @@ public class FlashSaleCustomerServiceImpl implements FlashSaleCustomerService {
         Long orderId = Long.parseLong(data.get("orderId"));
         int quantity = Integer.parseInt(data.get("quantity"));
 
-        // Delete reservation (stock permanently deducted)
+        // Xóa lượt giữ hàng, tồn kho đã được trừ hẳn
         redisService.deleteReservation(reservationId);
         redisService.commitUserPurchase(flashSaleItemId, userId);
 
-        // Update order status
+        // Cập nhật trạng thái đơn
         Order order = orderRepository.findById(orderId).orElse(null);
         if (order != null) {
             order.setPaymentStatus(PAYMENT_STATUS_PAID);
@@ -327,7 +326,7 @@ public class FlashSaleCustomerServiceImpl implements FlashSaleCustomerService {
             orderRepository.save(order);
         }
 
-        // Publish async order confirmed event (sync sold_quantity to MySQL)
+        // Gửi event xác nhận đơn để đồng bộ sold_quantity
         FlashSaleMessage confirmedMessage = FlashSaleMessage.builder()
                 .reservationId(reservationId)
                 .flashSaleItemId(flashSaleItemId)
@@ -338,14 +337,14 @@ public class FlashSaleCustomerServiceImpl implements FlashSaleCustomerService {
                 .build();
         messagePublisher.publishOrderConfirmed(confirmedMessage);
 
-        // Broadcast SSE
+        // Bắn SSE
         int newStock = redisService.getStock(flashSaleItemId);
         sseService.broadcastStockUpdate(flashSaleItemId, newStock, newStock <= 0);
 
         log.info("[FlashSale] Committed reservation={}, order={}", reservationId, orderId);
     }
 
-    // ======= CANCEL RESERVATION (timeout or payment failure) =======
+    // ======= HỦY RESERVATION KHI TIMEOUT HOẶC THANH TOÁN LỖI =======
 
     @Override
     @Transactional
@@ -353,7 +352,7 @@ public class FlashSaleCustomerServiceImpl implements FlashSaleCustomerService {
         Map<String, String> data = redisService.getReservation(reservationId);
         if (data.isEmpty()) {
             log.info("[FlashSale] Cancel called but reservation={} already gone (idempotent)", reservationId);
-            return; // Idempotent
+            return; // Đã xử lý trước đó
         }
 
         Long flashSaleItemId = Long.parseLong(data.get("flashSaleItemId"));
@@ -361,18 +360,18 @@ public class FlashSaleCustomerServiceImpl implements FlashSaleCustomerService {
         Long orderId = Long.parseLong(data.get("orderId"));
         int quantity = Integer.parseInt(data.get("quantity"));
 
-        // Release stock atomically
+        // Hoàn tồn kho nguyên tử
         long releaseResult = redisService.releaseStock(flashSaleItemId, userId, reservationId, quantity);
 
         if (releaseResult == 1) {
-            // Update order to CANCELLED
+            // Chuyển đơn sang CANCELLED
             Order order = orderRepository.findById(orderId).orElse(null);
             if (order != null && !ORDER_STATUS_CANCELLED.equals(order.getOrderStatus())) {
                 order.setOrderStatus(ORDER_STATUS_CANCELLED);
                 order.setPaymentStatus(PAYMENT_STATUS_FAILED);
                 orderRepository.save(order);
 
-                // Update payment transaction
+                // Cập nhật giao dịch thanh toán
                 PaymentTransaction txn = paymentTransactionRepository.findByOrderOrderId(orderId);
                 if (txn != null && TXN_STATUS_PENDING.equals(txn.getStatus())) {
                     txn.setStatus("CANCELLED");
@@ -380,11 +379,28 @@ public class FlashSaleCustomerServiceImpl implements FlashSaleCustomerService {
                 }
             }
 
-            // Broadcast SSE — stock restored
+            // Bắn SSE sau khi hoàn tồn kho
             int newStock = redisService.getStock(flashSaleItemId);
             sseService.broadcastStockUpdate(flashSaleItemId, newStock, newStock <= 0);
 
             log.info("[FlashSale] Cancelled reservation={}, stock restored", reservationId);
         }
+    }
+
+    @Override
+    @Transactional
+    public void cancelReservation(String reservationId, Long userId) {
+        Map<String, String> data = redisService.getReservation(reservationId);
+        if (data.isEmpty()) {
+            log.info("[FlashSale] User cancel called but reservation={} already gone", reservationId);
+            return;
+        }
+
+        Long storedUserId = Long.parseLong(data.get("userId"));
+        if (!storedUserId.equals(userId)) {
+            throw new AppException(ErrorCode.FORBIDDEN, "Khong co quyen huy reservation nay");
+        }
+
+        cancelReservation(reservationId);
     }
 }

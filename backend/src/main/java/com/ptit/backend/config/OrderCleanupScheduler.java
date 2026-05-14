@@ -43,7 +43,7 @@ public class OrderCleanupScheduler {
                 continue; // Bỏ qua nếu đã hủy
             }
 
-            // Skip flash sale orders — handled by RabbitMQ delayed cancel
+            // Bỏ qua đơn flash sale, đã có RabbitMQ hủy trễ xử lý
             if (orderDetailRepository.existsFlashSaleItemByOrderId(order.getOrderId())) {
                 log.debug("[OrderCleanup] Skipping flash sale order {}", order.getOrderId());
                 continue;

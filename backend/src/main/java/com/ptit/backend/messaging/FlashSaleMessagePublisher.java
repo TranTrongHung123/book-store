@@ -15,8 +15,7 @@ public class FlashSaleMessagePublisher {
     private final RabbitTemplate rabbitTemplate;
 
     /**
-     * Publish a delayed cancel message. The message sits in the delay queue
-     * for delayMs milliseconds, then gets routed to the process queue.
+     * Gửi message hủy trễ, hết delay sẽ chuyển sang queue xử lý.
      */
     public void publishDelayedCancel(FlashSaleMessage message, long delayMs) {
         MessagePostProcessor mpp = msg -> {
@@ -34,7 +33,7 @@ public class FlashSaleMessagePublisher {
     }
 
     /**
-     * Publish order confirmed event for async processing.
+     * Gửi sự kiện xác nhận đơn để xử lý nền.
      */
     public void publishOrderConfirmed(FlashSaleMessage message) {
         rabbitTemplate.convertAndSend(

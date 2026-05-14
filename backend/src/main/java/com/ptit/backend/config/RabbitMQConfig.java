@@ -14,17 +14,17 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class RabbitMQConfig {
 
-    // === Exchanges ===
+    // === Exchange ===
     public static final String FLASH_SALE_EXCHANGE = "flash-sale.exchange";
     public static final String FLASH_SALE_DLX = "flash-sale.dlx";
 
-    // === Queues ===
+    // === Queue ===
     public static final String CANCEL_DELAY_QUEUE = "flash-sale.cancel.delay.queue";
     public static final String CANCEL_PROCESS_QUEUE = "flash-sale.cancel.process.queue";
     public static final String ORDER_CONFIRMED_QUEUE = "flash-sale.order.confirmed.queue";
     public static final String DLQ = "flash-sale.dlq";
 
-    // === Routing Keys ===
+    // === Routing key ===
     public static final String CANCEL_ROUTING_KEY = "flash-sale.cancel";
     public static final String ORDER_CONFIRMED_ROUTING_KEY = "flash-sale.order.confirmed";
 
@@ -39,8 +39,7 @@ public class RabbitMQConfig {
     }
 
     /**
-     * Delay queue: messages sit here with per-message TTL.
-     * When TTL expires, messages are routed to the process queue via DLX mechanism.
+     * Queue delay giữ message theo TTL, hết hạn sẽ chuyển qua queue xử lý bằng DLX.
      */
     @Bean
     public Queue cancelDelayQueue() {
@@ -51,7 +50,7 @@ public class RabbitMQConfig {
     }
 
     /**
-     * Actual processing queue — consumer picks up expired cancel messages here.
+     * Queue xử lý message hủy sau khi hết delay.
      */
     @Bean
     public Queue cancelProcessQueue() {
@@ -72,7 +71,7 @@ public class RabbitMQConfig {
         return QueueBuilder.durable(DLQ).build();
     }
 
-    // === Bindings ===
+    // === Binding ===
 
     @Bean
     public Binding cancelDelayBinding() {

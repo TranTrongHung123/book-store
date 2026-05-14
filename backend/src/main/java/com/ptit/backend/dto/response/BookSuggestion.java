@@ -8,8 +8,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * Nested DTO trong ChatbotResponse — đại diện cho một cuốn sách được AI gợi ý.
- * BeanOutputConverter sẽ dùng class này để generate JSON schema cho Gemini.
+ * DTO con trong ChatbotResponse, đại diện cho sách AI gợi ý.
+ * BeanOutputConverter dùng class này để tạo JSON schema cho Gemini.
  */
 @Data
 @Builder

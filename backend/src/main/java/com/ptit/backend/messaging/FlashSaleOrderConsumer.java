@@ -20,7 +20,7 @@ public class FlashSaleOrderConsumer {
     private final FlashSaleItemRepository flashSaleItemRepository;
 
     /**
-     * After payment confirmed, sync sold_quantity to MySQL.
+     * Sau khi thanh toán thành công, đồng bộ sold_quantity vào MySQL.
      */
     @Transactional
     @RabbitListener(queues = RabbitMQConfig.ORDER_CONFIRMED_QUEUE, ackMode = "MANUAL")

@@ -18,7 +18,7 @@ public class FlashSaleReservationStatusResponse {
     @JsonProperty("order_id")
     private Long orderId;
 
-    /** PENDING, SUCCESS, CANCELLED, EXPIRED */
+    /** Trạng thái: PENDING, SUCCESS, CANCELLED, EXPIRED */
     @JsonProperty("status")
     private String status;
 

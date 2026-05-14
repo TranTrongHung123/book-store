@@ -42,7 +42,7 @@ public class FlashSaleCustomerController {
 
     /**
      * GET /api/v1/flash-sale/active
-     * Public — returns active campaigns with realtime stock from Redis.
+     * Công khai — trả về chiến dịch đang chạy kèm tồn kho realtime từ Redis.
      */
     @GetMapping("/active")
     public ResponseEntity<ApiResponse<List<FlashSaleActiveResponse>>> getActiveCampaigns() {
@@ -50,7 +50,7 @@ public class FlashSaleCustomerController {
         try {
             userId = getCurrentUserId();
         } catch (Exception e) {
-            // Public access or unauthenticated
+            // Cho phép công khai hoặc chưa đăng nhập
         }
         List<FlashSaleActiveResponse> result = flashSaleCustomerService.getActiveCampaigns(userId);
         return ResponseEntity.ok(success(result));
@@ -58,7 +58,7 @@ public class FlashSaleCustomerController {
 
     /**
      * POST /api/v1/flash-sale/reserve
-     * Authenticated — reserve stock → create order → return VNPay URL.
+     * Cần đăng nhập — giữ hàng, tạo đơn và trả URL VNPay.
      */
     @PostMapping("/reserve")
     public ResponseEntity<ApiResponse<FlashSaleReserveResponse>> reserveStock(
@@ -71,7 +71,7 @@ public class FlashSaleCustomerController {
 
     /**
      * GET /api/v1/flash-sale/reserve/{reservationId}/status
-     * Authenticated — check reservation countdown and status.
+     * Cần đăng nhập — xem thời gian còn lại và trạng thái reservation.
      */
     @GetMapping("/reserve/{reservationId}/status")
     public ResponseEntity<ApiResponse<FlashSaleReservationStatusResponse>> getReservationStatus(
@@ -82,8 +82,20 @@ public class FlashSaleCustomerController {
     }
 
     /**
+     * POST /api/v1/flash-sale/reserve/{reservationId}/cancel
+     * Cần đăng nhập — người dùng chủ động hủy lượt giữ hàng.
+     */
+    @PostMapping("/reserve/{reservationId}/cancel")
+    public ResponseEntity<ApiResponse<Object>> cancelReservation(
+            @PathVariable String reservationId) {
+        Long userId = getCurrentUserId();
+        flashSaleCustomerService.cancelReservation(reservationId, userId);
+        return ResponseEntity.ok(success(null));
+    }
+
+    /**
      * GET /api/v1/flash-sale/sse/stock
-     * Public SSE endpoint — broadcasts realtime stock updates.
+     * SSE công khai — bắn cập nhật tồn kho realtime.
      */
     @GetMapping(value = "/sse/stock", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter stockSse() {

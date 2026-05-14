@@ -2,17 +2,17 @@
 -- KEYS[1] = flash:stock:{flashSaleItemId}
 -- KEYS[2] = flash:user:{flashSaleItemId}:{userId}
 -- KEYS[3] = flash:idempotent:{userId}:{flashSaleItemId}
--- ARGV[1] = quantity to reserve
--- ARGV[2] = maxPerUser
--- ARGV[3] = idempotency TTL in seconds
+-- ARGV[1] = số lượng cần giữ
+-- ARGV[2] = giới hạn mỗi user
+-- ARGV[3] = TTL chống trùng request, tính bằng giây
 --
--- Returns:
---   1 = success
---  -1 = duplicate request (idempotent)
---  -2 = max per user exceeded
---  -3 = insufficient stock
+-- Kết quả:
+--   1 = thành công
+--  -1 = request trùng
+--  -2 = vượt giới hạn mỗi user
+--  -3 = không đủ stock
 
--- 1. Check idempotency
+-- 1. Chặn request trùng
 local idempotent = redis.call('EXISTS', KEYS[3])
 if idempotent == 1 then
     return -1
@@ -22,19 +22,19 @@ local qty = tonumber(ARGV[1])
 local maxPerUser = tonumber(ARGV[2])
 local idempotentTtl = tonumber(ARGV[3])
 
--- 2. Check max per user
+-- 2. Kiểm tra giới hạn mỗi user
 local currentUserQty = tonumber(redis.call('GET', KEYS[2]) or '0')
 if currentUserQty + qty > maxPerUser then
     return -2
 end
 
--- 3. Check stock availability
+-- 3. Kiểm tra còn stock không
 local currentStock = tonumber(redis.call('GET', KEYS[1]) or '0')
 if currentStock < qty then
     return -3
 end
 
--- 4. All checks passed — atomically update
+-- 4. Hợp lệ thì cập nhật atomically
 redis.call('DECRBY', KEYS[1], qty)
 redis.call('INCRBY', KEYS[2], qty)
 redis.call('SET', KEYS[3], '1', 'EX', idempotentTtl)

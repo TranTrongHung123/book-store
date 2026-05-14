@@ -12,23 +12,23 @@ public interface ChatbotService {
     ChatSessionResponse createSession(Long userId);
 
     /**
-     * Lấy session ACTIVE gần nhất của user đã đăng nhập.
-     * Dùng để frontend restore session khi user mở lại chatbot.
+     * Lấy session ACTIVE gần nhất của người dùng đã đăng nhập.
+     * Dùng để frontend khôi phục session khi người dùng mở lại chatbot.
      */
     Optional<ChatSessionResponse> getActiveSession(Long userId);
 
     /**
-     * Xử lý tin nhắn của user và trả về phản hồi từ AI.
+     * Xử lý tin nhắn của người dùng và trả về phản hồi từ AI.
      *
      * Quy trình:
-     * 1. Validate session
-     * 2. RAG search (MySQL FULLTEXT + Author FULLTEXT)
-     * 3. Load chat history từ MySQL
-     * 4. Build prompt với RAG context
+     * 1. Kiểm tra session
+     * 2. Tìm RAG bằng FULLTEXT trong MySQL
+     * 3. Nạp lịch sử chat từ MySQL
+     * 4. Tạo prompt kèm context RAG
      * 5. Gọi Gemini API (qua Spring AI)
-     * 6. Parse structured output (BeanOutputConverter)
-     * 7. Persist messages vào DB
-     * 8. Auto-truncate nếu quá nhiều tin nhắn
+     * 6. Parse output theo schema
+     * 7. Lưu tin nhắn vào DB
+     * 8. Tự cắt bớt nếu quá nhiều tin nhắn
      */
     ChatbotResponse chat(ChatRequest request, Long userId);
 

@@ -30,7 +30,7 @@ public class FlashSaleCancelConsumer {
         } catch (Exception e) {
             log.error("[MQ Consumer] Failed to cancel reservation={}", message.getReservationId(), e);
             try {
-                // Reject and don't requeue — will go to DLQ
+                // Từ chối và không requeue, chuyển sang DLQ
                 channel.basicNack(deliveryTag, false, false);
             } catch (Exception ex) {
                 log.error("[MQ Consumer] Failed to nack message", ex);

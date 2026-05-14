@@ -47,8 +47,7 @@ public class PaymentController {
             message = "Thanh toan that bai hoac bi huy";
         }
 
-        // Fallback: process payment on return callback as well.
-        // This keeps order status in sync even when VNPay IPN is delayed/unreachable.
+        // Xử lý thêm ở callback để đồng bộ đơn khi IPN chậm hoặc không tới.
         if (validSignature) {
             try {
                 IpnResponse callbackProcessResult = ipnHandler.process(params);

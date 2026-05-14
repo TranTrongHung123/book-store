@@ -59,11 +59,12 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/categories/**").permitAll()
                         .requestMatchers("/api/v1/payment/vnpay-callback").permitAll()
                         .requestMatchers("/api/v1/payment/vnpay-ipn").permitAll()
-                        // Flash Sale — public endpoints
+                        // Flash Sale — endpoint công khai
                         .requestMatchers(HttpMethod.GET, "/api/v1/flash-sale/active").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/flash-sale/sse/**").permitAll()
-                        // Flash Sale — authenticated user endpoints
+                        // Flash Sale — endpoint cần đăng nhập
                         .requestMatchers(HttpMethod.POST, "/api/v1/flash-sale/reserve").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/v1/flash-sale/reserve/*/cancel").hasAnyRole("USER", "ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/v1/flash-sale/reserve/**").hasAnyRole("USER", "ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/v1/firebase/**").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/v1/support/claim-waiting").hasAnyRole("ADMIN", "MANAGER", "STAFF")

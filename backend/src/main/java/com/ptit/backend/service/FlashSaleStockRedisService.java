@@ -5,59 +5,59 @@ import java.util.Map;
 public interface FlashSaleStockRedisService {
 
     /**
-     * Initialize flash sale stock in Redis when campaign becomes active.
+     * Nạp tồn kho flash sale vào Redis khi chiến dịch bắt đầu.
      */
     void initializeStock(Long flashSaleItemId, int availableStock);
 
     /**
-     * Atomic stock reservation via Lua script.
-     * @return 1=success, -1=duplicate, -2=max_per_user exceeded, -3=out of stock
+     * Giữ tồn kho nguyên tử bằng Lua script.
+     * @return 1=thành công, -1=trùng yêu cầu, -2=vượt giới hạn, -3=hết hàng
      */
     long reserveStock(Long flashSaleItemId, Long userId, int quantity, int maxPerUser);
 
     /**
-     * Atomic stock release via Lua script.
-     * @return 1=success, 0=reservation already gone
+     * Hoàn tồn kho nguyên tử bằng Lua script.
+     * @return 1=thành công, 0=lượt giữ hàng đã mất
      */
     long releaseStock(Long flashSaleItemId, Long userId, String reservationId, int quantity);
 
     /**
-     * Get current remaining stock from Redis.
+     * Lấy tồn kho còn lại từ Redis.
      */
     int getStock(Long flashSaleItemId);
 
     /**
-     * Store reservation data with TTL.
+     * Lưu reservation kèm TTL.
      */
     void setReservation(String reservationId, Map<String, String> data, long ttlSeconds);
 
     /**
-     * Get reservation data.
+     * Lấy dữ liệu reservation.
      */
     Map<String, String> getReservation(String reservationId);
 
     /**
-     * Delete reservation (used on commit).
+     * Xóa reservation khi xác nhận đơn.
      */
     void deleteReservation(String reservationId);
 
     /**
-     * Get TTL remaining on reservation.
+     * Lấy TTL còn lại của reservation.
      */
     long getReservationTtl(String reservationId);
 
     /**
-     * Cleanup all Redis keys for a campaign.
+     * Dọn toàn bộ key Redis của một chiến dịch.
      */
     void cleanupCampaignKeys(Long campaignId, java.util.List<Long> flashSaleItemIds);
 
     /**
-     * Decrement user purchase count (used on commit to make count permanent).
+     * Giữ nguyên số lượng mua của người dùng sau khi xác nhận đơn.
      */
     void commitUserPurchase(Long flashSaleItemId, Long userId);
 
     /**
-     * Get user purchase count for a specific flash sale item.
+     * Lấy số lượng người dùng đã giữ/mua của một item.
      */
     int getUserPurchaseCount(Long flashSaleItemId, Long userId);
 }
