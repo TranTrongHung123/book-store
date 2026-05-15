@@ -1,5 +1,6 @@
 package com.ptit.backend.service;
 
+import com.ptit.backend.dto.request.ChangePasswordRequest;
 import com.ptit.backend.dto.request.LoginRequest;
 import com.ptit.backend.dto.request.RegisterRequest;
 import com.ptit.backend.dto.response.LoginResponse;
@@ -15,5 +16,7 @@ public interface AuthService {
     UserResponse me(Authentication authentication);
 
     UserResponse register(RegisterRequest request);
+
+    void changePassword(Authentication authentication, ChangePasswordRequest request);
 }
 

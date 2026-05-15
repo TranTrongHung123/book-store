@@ -11,17 +11,17 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
 /**
- * RAG Service
+ * Dịch vụ tìm dữ liệu RAG.
  *
- * Sử dụng MySQL FULLTEXT Search để tìm sách liên quan đến câu hỏi của user,
+ * Sử dụng MySQL FULLTEXT để tìm sách liên quan đến câu hỏi của người dùng,
  * sau đó JOIN với các bảng author, promotion, flash_sale để tạo ra một
- * "Context Payload" giàu thông tin nhất để nhúng vào System Prompt cho AI.
+ * context giàu thông tin nhất để nhúng vào prompt cho AI.
  *
  * Thứ tự ưu tiên tìm kiếm:
- * 1. FULLTEXT search trên book(title, description)
- * 2. FULLTEXT search trên author(name) → lấy sách của tác giả đó
- * 3. LIKE fallback trên title, description, author name
- * 4. General context (sách nổi bật + flash sale + promo) nếu query rỗng
+ * 1. FULLTEXT trên book(title, description)
+ * 2. FULLTEXT trên author(name) → lấy sách của tác giả đó
+ * 3. Tìm bằng LIKE trên title, description, author name
+ * 4. Context chung nếu query rỗng
  */
 @Slf4j
 @Service
@@ -31,8 +31,8 @@ public class BookRagSearchService {
     private final JdbcTemplate jdbcTemplate;
 
     /**
-     * Native SQL query sử dụng MySQL FULLTEXT BOOLEAN MODE search trên sách.
-     * Giới hạn 8 kết quả, sắp xếp theo relevance score
+     * Query native dùng FULLTEXT BOOLEAN MODE trên sách.
+     * Giới hạn 8 kết quả, sắp xếp theo độ liên quan.
      */
     private static final String RAG_FULLTEXT_QUERY = """
             SELECT
@@ -70,7 +70,7 @@ public class BookRagSearchService {
             """;
 
     /**
-     * FULLTEXT search trên bảng author, sau đó lấy sách của tác giả đó
+     * FULLTEXT trên bảng author, sau đó lấy sách của tác giả đó.
      */
     private static final String AUTHOR_FULLTEXT_QUERY = """
             SELECT
@@ -110,7 +110,7 @@ public class BookRagSearchService {
             """;
 
     /**
-     * Fallback query khi FULLTEXT không tìm thấy kết quả: LIKE search đơn giản
+     * Tìm bằng LIKE khi FULLTEXT không có kết quả.
      */
     private static final String FALLBACK_LIKE_QUERY = """
             SELECT
@@ -147,7 +147,7 @@ public class BookRagSearchService {
             """;
 
     /**
-     * General context: sách đang flash sale + sách mới nhất
+     * Context chung: sách flash sale + sách mới nhất.
      * Dùng khi query rỗng hoặc chung chung
      */
     private static final String GENERAL_CONTEXT_QUERY = """
@@ -214,16 +214,16 @@ public class BookRagSearchService {
             """;
 
     /**
-     * Tìm kiếm sách liên quan và build context payload cho RAG
+     * Tìm sách liên quan và tạo context cho RAG.
      */
     public String buildContextPayload(String userQuery) {
-        // Query rỗng → trả về general context (flash sale + sách mới)
+        // Query rỗng thì trả context chung
         if (userQuery == null || userQuery.isBlank()) {
             return buildGeneralContext();
         }
 
         try {
-            // 1. FULLTEXT search trên book title/description
+            // 1. FULLTEXT trên title/description
             String fulltextQuery = prepareFulltextQuery(userQuery);
             List<BookRagResult> results = Collections.emptyList();
 
@@ -231,7 +231,7 @@ public class BookRagSearchService {
                 results = executeFulltextSearch(fulltextQuery);
             }
 
-            // 2. FULLTEXT search trên author name nếu không đủ kết quả
+            // 2. FULLTEXT trên author nếu chưa đủ kết quả
             if (results.size() < 3) {
                 List<BookRagResult> authorResults = executeAuthorSearch(fulltextQuery);
                 // Gộp kết quả, tránh trùng book_id
@@ -245,13 +245,13 @@ public class BookRagSearchService {
                 }
             }
 
-            // 3. LIKE fallback nếu vẫn trống
+            // 3. Dùng LIKE nếu vẫn trống
             if (results.isEmpty()) {
                 log.debug("FULLTEXT search không có kết quả, fallback sang LIKE search cho: {}", userQuery);
                 results = executeLikeSearch(userQuery);
             }
 
-            // 4. Nếu vẫn không có → general context
+            // 4. Nếu vẫn không có thì dùng context chung
             if (results.isEmpty()) {
                 log.debug("LIKE search không có kết quả cho: {}, dùng general context", userQuery);
                 return buildGeneralContext();
@@ -267,7 +267,7 @@ public class BookRagSearchService {
     }
 
     /**
-     * Build general context khi không có query cụ thể
+     * Tạo context chung khi không có query cụ thể.
      */
     private String buildGeneralContext() {
         try {

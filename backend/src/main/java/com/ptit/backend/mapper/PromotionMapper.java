@@ -13,7 +13,7 @@ import org.mapstruct.Named;
 @Mapper(componentModel = "spring")
 public interface PromotionMapper {
 
-    // Convert string "1,3" from DB to List ["1", "3"] for response
+    // Đổi chuỗi "1,3" từ DB sang List ["1", "3"] để trả phản hồi
     @Named("mapStringToList")
     default List<String> mapStringToList(String categories) {
         if (categories == null || categories.trim().isEmpty()) {
@@ -22,7 +22,7 @@ public interface PromotionMapper {
         return Arrays.asList(categories.split(","));
     }
 
-    // Convert List ["1", "3"] from request to string "1,3" for database
+    // Đổi List ["1", "3"] từ yêu cầu sang chuỗi "1,3" để lưu DB
     @Named("mapListToString")
     default String mapListToString(List<String> categories) {
         if (categories == null || categories.isEmpty()) {

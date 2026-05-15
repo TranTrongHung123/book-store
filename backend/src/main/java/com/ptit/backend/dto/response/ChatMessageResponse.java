@@ -17,7 +17,7 @@ public class ChatMessageResponse {
     private Long messageId;
 
     @JsonProperty("sender_type")
-    private String senderType; // USER | BOT
+    private String senderType; // Người gửi: USER | BOT
 
     private String content;
 

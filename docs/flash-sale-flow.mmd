@@ -1,0 +1,45 @@
+sequenceDiagram
+    actor User as Trình duyệt người dùng
+    participant API as Spring Boot API
+    participant Redis as Redis
+    participant MQ as RabbitMQ
+    participant DB as MySQL
+    participant VNPay as VNPay
+    participant SSE as SSE
+
+    User->>API: POST /api/v1/flash-sale/reserve
+    API->>Redis: Giữ hàng bằng Lua script
+    Redis-->>API: Giữ hàng thành công
+
+    API->>DB: Tạo đơn hàng chờ thanh toán
+    API->>DB: Tạo giao dịch thanh toán chờ xử lý
+    API->>VNPay: Tạo link thanh toán
+    API->>Redis: Lưu reservation trong 5 phút
+    API->>MQ: Gửi tin nhắn hủy trễ
+    API->>SSE: Gửi cập nhật số lượng còn lại
+    API-->>User: Trả về reservationId và paymentUrl
+
+    User->>VNPay: Thanh toán đơn hàng
+    VNPay->>API: Callback / IPN
+    API->>API: Kiểm tra chữ ký VNPay
+
+    alt Thanh toán thành công trước khi hết hạn
+        API->>Redis: Xóa reservation
+        API->>DB: Cập nhật đơn hàng đã thanh toán
+        API->>MQ: Gửi sự kiện xác nhận đơn hàng
+        MQ->>DB: Tăng số lượng đã bán
+        API->>SSE: Gửi cập nhật số lượng còn lại
+        API-->>VNPay: Xác nhận thành công
+    else Thanh toán thất bại hoặc bị hủy
+        API->>Redis: Hoàn lại hàng và xóa reservation
+        API->>DB: Hủy đơn hàng
+        API->>SSE: Gửi cập nhật số lượng sau khi hoàn hàng
+        API-->>VNPay: Xác nhận đã xử lý
+    end
+
+    alt Người dùng không thanh toán trong 5 phút
+        MQ->>API: Tin nhắn hủy trễ
+        API->>Redis: Hoàn lại hàng nếu reservation còn tồn tại
+        API->>DB: Hủy đơn hàng
+        API->>SSE: Gửi cập nhật số lượng sau khi hoàn hàng
+    end

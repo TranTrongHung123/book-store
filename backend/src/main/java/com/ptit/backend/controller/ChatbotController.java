@@ -33,8 +33,8 @@ public class ChatbotController {
 
     /**
      * Tạo phiên chat mới.
-     * Nếu user đã đăng nhập session sẽ được gắn với userId.
-     * Nếu là khách (guest), session tạo với user = null.
+     * Nếu người dùng đã đăng nhập, session sẽ được gắn với userId.
+     * Nếu là khách, session tạo với user = null.
      */
     @PostMapping("/session")
     public ApiResponse<ChatSessionResponse> createSession() {
@@ -48,7 +48,7 @@ public class ChatbotController {
     }
 
     /**
-     * Lấy session ACTIVE hiện tại của user đã đăng nhập.
+     * Lấy session ACTIVE hiện tại của người dùng đã đăng nhập.
      * Frontend gọi endpoint này khi mở chatbot để restore session cũ thay vì tạo mới.
      * Trả về 404 (result = null) nếu không có session nào đang active.
      */
@@ -72,7 +72,7 @@ public class ChatbotController {
     }
 
     /**
-     * Gửi tin nhắn đến chatbot và nhận phản hồi structured
+     * Gửi tin nhắn đến chatbot và nhận phản hồi theo schema.
      */
     @PostMapping("/chat")
     public ApiResponse<ChatbotResponse> chat(@RequestBody @Valid ChatRequest request) {
@@ -114,7 +114,7 @@ public class ChatbotController {
 
 
     /**
-     * Trích xuất userId từ JWT token (nếu user đã đăng nhập).
+     * Trích xuất userId từ JWT token nếu người dùng đã đăng nhập.
      * Trả về null nếu là guest (chưa đăng nhập).
      */
     private Long getCurrentUserId() {

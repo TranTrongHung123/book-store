@@ -14,10 +14,10 @@ public interface FlashSaleCampaignRepository extends JpaRepository<FlashSaleCamp
      */
     @Query("""
             SELECT c FROM FlashSaleCampaign c
-            WHERE c.status = 'ACTIVE'
-              AND c.startTime <= CURRENT_TIMESTAMP
-              AND c.endTime >= CURRENT_TIMESTAMP
+            WHERE (c.status = 'ACTIVE' OR c.status = 'UPCOMING')
+              AND c.startTime <= :now
+              AND c.endTime >= :now
             ORDER BY c.endTime ASC
             """)
-    List<FlashSaleCampaign> findAllActiveCampaigns();
+    List<FlashSaleCampaign> findAllActiveCampaigns(@org.springframework.data.repository.query.Param("now") java.time.LocalDateTime now);
 }

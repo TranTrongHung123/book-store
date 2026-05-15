@@ -1,9 +1,11 @@
 package com.ptit.backend.controller;
 
+import com.ptit.backend.dto.request.ChangePasswordRequest;
 import com.ptit.backend.dto.request.UserRequest;
 import com.ptit.backend.dto.response.ApiResponse;
 import com.ptit.backend.dto.response.PagedResponse;
 import com.ptit.backend.dto.response.UserResponse;
+import com.ptit.backend.service.AuthService;
 import com.ptit.backend.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -12,10 +14,12 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -30,6 +34,7 @@ public class UserController {
     private static final String SUCCESS_MESSAGE = "Thanh cong";
 
     private final UserService userService;
+    private final AuthService authService;
 
     @GetMapping
     public ResponseEntity<ApiResponse<PagedResponse<UserResponse>>> getUsers(
@@ -37,10 +42,12 @@ public class UserController {
             @RequestParam(name = "_limit", defaultValue = "10") int limit,
             @RequestParam(name = "_sort", defaultValue = "userId") String sort,
             @RequestParam(name = "_order", defaultValue = "asc") String order,
-            @RequestParam(name = "q", required = false) String q
+            @RequestParam(name = "q", required = false) String q,
+            @RequestParam(name = "role_id", required = false) Long roleId,
+            @RequestParam(name = "status", required = false) Integer status
     ) {
         Pageable pageable = buildPageable(page, limit, sort, order);
-        Page<UserResponse> result = userService.getUsers(pageable);
+        Page<UserResponse> result = userService.getUsers(roleId, status, q, pageable);
 
         ApiResponse<PagedResponse<UserResponse>> response = ApiResponse.<PagedResponse<UserResponse>>builder()
                 .code(SUCCESS_CODE)
@@ -57,6 +64,13 @@ public class UserController {
         return ResponseEntity.ok(success(result));
     }
 
+    @PostMapping
+    public ResponseEntity<ApiResponse<UserResponse>> createUser(
+            @Valid @RequestBody UserRequest request
+    ) {
+        UserResponse result = userService.createUser(request);
+        return ResponseEntity.ok(success(result));
+    }
 
     @PatchMapping("/{id}")
     public ResponseEntity<ApiResponse<UserResponse>> updateUser(
@@ -65,6 +79,15 @@ public class UserController {
     ) {
         UserResponse result = userService.updateUser(id, request);
         return ResponseEntity.ok(success(result));
+    }
+
+    @PatchMapping("/me/password")
+    public ResponseEntity<ApiResponse<Object>> changePassword(
+            Authentication authentication,
+            @Valid @RequestBody ChangePasswordRequest request
+    ) {
+        authService.changePassword(authentication, request);
+        return ResponseEntity.ok(success(null));
     }
 
     @DeleteMapping("/{id}")

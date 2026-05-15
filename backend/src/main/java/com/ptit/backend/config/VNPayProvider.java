@@ -74,12 +74,12 @@ public class VNPayProvider {
                 String fieldValue = vnp_Params.get(fieldName);
                 if ((fieldValue != null) && (fieldValue.length() > 0)) {
 
-                    // Build hash data (Không mã hóa tên biến, chỉ mã hóa giá trị)
+                    // Tạo dữ liệu hash, chỉ mã hóa giá trị
                     hashData.append(fieldName);
                     hashData.append('=');
                     hashData.append(URLEncoder.encode(fieldValue, StandardCharsets.US_ASCII.toString()));
 
-                    // Build query (Mã hóa cả hai)
+                    // Tạo query, mã hóa cả tên và giá trị
                     query.append(URLEncoder.encode(fieldName, StandardCharsets.US_ASCII.toString()));
                     query.append('=');
                     query.append(URLEncoder.encode(fieldValue, StandardCharsets.US_ASCII.toString()));

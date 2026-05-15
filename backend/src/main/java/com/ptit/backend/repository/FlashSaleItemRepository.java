@@ -20,12 +20,12 @@ public interface FlashSaleItemRepository extends JpaRepository<FlashSaleItem, Lo
             SELECT fsi FROM FlashSaleItem fsi
             JOIN fsi.campaign c
             WHERE fsi.book.bookId = :bookId
-              AND c.status = 'ACTIVE'
-              AND c.startTime <= CURRENT_TIMESTAMP
-              AND c.endTime >= CURRENT_TIMESTAMP
+              AND (c.status = 'ACTIVE' OR c.status = 'UPCOMING')
+              AND c.startTime <= :now
+              AND c.endTime >= :now
               AND fsi.soldQuantity < fsi.quantity
             """)
-    Optional<FlashSaleItem> findActiveFlashSaleByBookId(@Param("bookId") Long bookId);
+    Optional<FlashSaleItem> findActiveFlashSaleByBookId(@Param("bookId") Long bookId, @Param("now") java.time.LocalDateTime now);
 
     List<FlashSaleItem> findByCampaignCampaignId(Long campaignId);
 

@@ -14,38 +14,40 @@ import org.springframework.transaction.annotation.Transactional;
 public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> {
 
     /**
-     * Load N tin nhắn gần nhất của session
+     * Nạp N tin nhắn gần nhất của session.
      */
     @Query("SELECT m FROM ChatMessage m WHERE m.session.sessionId = :sessionId ORDER BY m.createdAt DESC")
     List<ChatMessage> findTopNBySessionId(@Param("sessionId") Long sessionId, Pageable pageable);
 
     /**
-     * Load toàn bộ lịch sử hội thoại của session theo thứ tự thời gian
+     * Nạp toàn bộ lịch sử hội thoại của session theo thứ tự thời gian.
      */
     List<ChatMessage> findBySessionSessionIdOrderByCreatedAtAsc(Long sessionId);
 
     /**
-     * Đếm tổng số tin nhắn trong session — dùng để quyết định có cần truncate không
+     * Đếm tổng số tin nhắn trong session để biết có cần cắt bớt không.
      */
     long countBySessionSessionId(Long sessionId);
 
     /**
-     * Xóa N tin nhắn cũ nhất của session (auto-truncation).
+     * Xóa N tin nhắn cũ nhất của session.
      */
-    @Transactional
+    @Query("SELECT c.messageId FROM ChatMessage c WHERE c.session.sessionId = :sessionId ORDER BY c.createdAt ASC")
+    List<Long> findOldestMessageIds(@Param("sessionId") Long sessionId, Pageable pageable);
+
     @Modifying
-    @Query(value = """
-            DELETE FROM chat_message
-            WHERE message_id IN (
-                SELECT message_id FROM (
-                    SELECT message_id FROM chat_message
-                    WHERE session_id = :sessionId
-                    ORDER BY created_at ASC
-                    LIMIT :deleteCount
-                ) AS oldest_msgs
-            )
-            """, nativeQuery = true)
-    void deleteOldestMessages(@Param("sessionId") Long sessionId, @Param("deleteCount") int deleteCount);
+    @Transactional
+    @Query("DELETE FROM ChatMessage c WHERE c.messageId IN :ids")
+    void deleteMessagesByIds(@Param("ids") List<Long> ids);
+
+    @Transactional
+    default void deleteOldestMessages(Long sessionId, int deleteCount) {
+        List<Long> ids = findOldestMessageIds(sessionId,
+                org.springframework.data.domain.PageRequest.of(0, deleteCount));
+        if (!ids.isEmpty()) {
+            deleteMessagesByIds(ids);
+        }
+    }
 
     /**
      * Xóa toàn bộ tin nhắn của session
@@ -55,4 +57,3 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> 
     @Query("DELETE FROM ChatMessage m WHERE m.session.sessionId = :sessionId")
     void deleteAllBySessionSessionId(@Param("sessionId") Long sessionId);
 }
-
